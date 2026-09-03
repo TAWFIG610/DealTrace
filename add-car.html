@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vehicle deals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<!-- Supabase JS SDK & Auth Layer -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<style>
+  :root{
+    --paper:#F5F2EA;
+    --panel:#FFFFFF;
+    --ink:#211C15;
+    --ink-soft:#5B564C;
+    --ink-faint:#928C7E;
+    --line:#DDD6C4;
+    --line-strong:#C7BEA6;
+    --brass:#A6742C;
+    --brass-deep:#7C5620;
+    --brass-tint:#F3E7CF;
+    --steel:#435364;
+    --steel-tint:#E7ECEF;
+    --danger:#A3392F;
+    --danger-tint:#F7E4E1;
+    --good:#3E5C33;
+    --good-tint:#EAF1E4;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Public Sans',sans-serif;}
+  .wrap{max-width:820px;margin:0 auto;padding:40px 28px 80px;}
+
+  .admin-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 24px;
+    font-size: 13px;
+  }
+  .admin-bar-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink-soft);
+  }
+  .admin-pill {
+    background: var(--good-tint);
+    color: var(--good);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: 1px solid rgba(62, 92, 51, 0.2);
+  }
+  .btn-signout {
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-soft);
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-signout:hover {
+    background: var(--danger-tint);
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;margin:0 0 4px;letter-spacing:-0.01em;}
+  .sub{color:var(--ink-soft);font-size:14.5px;margin:0 0 24px;}
+
+  .tabs{display:flex;gap:22px;margin-bottom:28px;border-bottom:1.5px solid var(--line);}
+  .tab-btn{
+    font-family:'Public Sans',sans-serif;font-weight:600;font-size:14.5px;
+    padding:10px 2px;border:none;background:transparent;color:var(--ink-faint);
+    cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;
+  }
+  .tab-btn.active{color:var(--ink);border-bottom-color:var(--brass);}
+  .tab-btn:hover{color:var(--ink);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  .plate{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    margin-bottom:28px;
+  }
+  .plate-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);margin:0 0 10px;font-weight:600;}
+  .plate-row{display:flex;gap:10px;}
+  .plate-row input{
+    flex:1;
+    font-family:'JetBrains Mono',monospace;
+    font-size:16px;
+    font-weight:600;
+    letter-spacing:.06em;
+    padding:12px 14px;
+    border:1.5px solid var(--line-strong);
+    border-radius:8px;
+    background:var(--paper);
+    color:var(--ink);
+    text-transform:uppercase;
+  }
+  .plate-row input:focus{outline:none;border-color:var(--brass);background:var(--panel);}
+  .plate-row input::placeholder{color:var(--ink-faint);font-weight:500;letter-spacing:.03em;text-transform:none;}
+  .btn-fill{
+    font-family:'Public Sans',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:0 20px;
+    border:none;
+    border-radius:8px;
+    background:var(--brass);
+    color:#fff;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .btn-fill:hover{background:var(--brass-deep);}
+  .btn-fill:disabled{background:var(--ink-faint);cursor:default;}
+  .plate-alt{margin-top:12px;font-size:13px;color:var(--ink-soft);}
+  .plate-alt a{color:var(--steel);cursor:pointer;text-decoration:underline;}
+  .status{font-size:13px;margin-top:10px;padding:8px 12px;border-radius:6px;display:none;}
+  .status.show{display:block;}
+  .status.ok{background:var(--good-tint);color:var(--good);}
+  .status.err{background:var(--danger-tint);color:var(--danger);}
+  .status.loading{background:var(--steel-tint);color:var(--steel);}
+
+  .section-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;margin:0 0 3px;}
+  .section-note{font-size:13px;color:var(--ink-faint);margin:0 0 14px;}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin-bottom:24px;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;}
+  @media (max-width:520px){.grid{grid-template-columns:1fr;}}
+
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field-label-row{display:flex;align-items:center;justify-content:space-between;}
+  .field label{font-size:12.5px;font-weight:600;color:var(--ink-soft);}
+  .badge-auto{font-size:10px;font-weight:600;letter-spacing:.03em;color:var(--brass-deep);background:var(--brass-tint);padding:2px 7px;border-radius:20px;}
+  .field input, .field select, .field textarea{
+    font-family:'Public Sans',sans-serif;
+    font-size:14.5px;
+    padding:9px 11px;
+    border:1px solid var(--line-strong);
+    border-radius:7px;
+    background:var(--paper);
+    color:var(--ink);
+    width:100%;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{outline:none;border-color:var(--steel);background:var(--panel);}
+  .field textarea{resize:vertical;min-height:64px;font-family:'Public Sans',sans-serif;}
+  .field-full{grid-column:1/-1;}
+
+  .custom-row{display:flex;gap:10px;align-items:flex-end;margin-bottom:10px;}
+  .custom-row .field{flex:1;}
+  .remove-btn{
+    border:1px solid var(--line-strong);background:var(--panel);color:var(--danger);
+    width:36px;height:36px;border-radius:7px;cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;
+  }
+  .remove-btn:hover{background:var(--danger-tint);border-color:var(--danger);}
+  .add-field-btn{
+    border:1px dashed var(--line-strong);background:transparent;color:var(--ink-soft);
+    padding:10px 14px;border-radius:7px;font-size:13.5px;font-weight:600;cursor:pointer;width:100%;
+  }
+  .add-field-btn:hover{border-color:var(--brass);color:var(--brass-deep);background:var(--brass-tint);}
+
+  .save-row{display:flex;gap:12px;margin-top:8px;}
+  .btn-save{
+    flex:1;font-family:'Public Sans',sans-serif;font-weight:600;font-size:15px;
+    padding:13px;border:none;border-radius:8px;background:var(--ink);color:#fff;cursor:pointer;
+  }
+  .btn-save:hover{background:#3a352a;}
+  .saved-note{font-size:13px;color:var(--ink-faint);margin-top:10px;text-align:center;display:none;}
+  .saved-note.show{display:block;}
+
+  .photo-drop{
+    border:1.5px dashed var(--line-strong);
+    border-radius:var(--radius);
+    padding:26px 20px;
+    text-align:center;
+    cursor:pointer;
+    color:var(--ink-soft);
+    font-size:13.5px;
+    transition:border-color .15s, background .15s;
+  }
+  .photo-drop:hover, .photo-drop.drag{border-color:var(--brass);background:var(--brass-tint);color:var(--brass-deep);}
+  .photo-drop strong{color:var(--ink);}
+  .photo-drop.drag strong{color:var(--brass-deep);}
+  .photo-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin-top:14px;}
+  .photo-thumb{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--line);aspect-ratio:1;background:var(--paper);}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .photo-thumb .cover-tag{position:absolute;bottom:0;left:0;right:0;font-size:10px;font-weight:600;letter-spacing:.03em;text-align:center;padding:3px 0;background:rgba(33,28,21,.72);color:#fff;}
+  .photo-thumb .photo-remove{
+    position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;
+    border:none;background:rgba(33,28,21,.72);color:#fff;font-size:13px;line-height:1;cursor:pointer;
+  }
+  .photo-thumb .photo-remove:hover{background:var(--danger);}
+  .photo-thumb:not(.is-cover):hover .make-cover{display:block;}
+  .make-cover{
+    position:absolute;top:4px;left:4px;display:none;
+    font-size:9.5px;font-weight:600;padding:3px 6px;border-radius:5px;border:none;
+    background:rgba(255,255,255,.9);color:var(--ink);cursor:pointer;
+  }
+
+  .btn-secondary{background:var(--panel);color:var(--ink);border:1.5px solid var(--line-strong);}
+  .btn-secondary:hover{background:var(--steel-tint);border-color:var(--steel);}
+
+  #printArea{display:none;}
+  @media print{
+    @page{size:auto;margin:14mm 12mm;}
+    html, body{height:auto;margin:0;}
+    .wrap{display:none !important;}
+    #printArea{display:block !important;width:100%;padding:0;}
+    .print-page{page-break-after:always;page-break-inside:avoid;}
+    .print-page:last-child{page-break-after:auto;}
+    .print-title{font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin:0 0 3px;}
+    .print-sub{color:#666;font-size:10.5px;margin:0 0 12px;}
+    .print-section{font-family:'Fraunces',serif;font-size:13px;font-weight:600;margin:12px 0 5px;border-bottom:1px solid #ccc;padding-bottom:3px;page-break-after:avoid;}
+    .print-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid #eee;page-break-inside:avoid;}
+    .print-row span:first-child{color:#666;}
+    .print-photos{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+    .print-photos img{width:80px;height:80px;object-fit:cover;border-radius:4px;}
+  }
+
+  .search-row{display:flex;gap:10px;}
+  .search-row input{flex:1;}
+  .buyer-results{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+  .buyer-result{
+    display:flex;align-items:center;gap:12px;padding:12px 14px;
+    border:1px solid var(--line);border-radius:8px;background:var(--paper);
+  }
+  .buyer-result input[type="checkbox"]{width:16px;height:16px;flex-shrink:0;accent-color:var(--brass);}
+  .buyer-result .br-info{flex:1;}
+  .buyer-result .br-title{font-weight:600;font-size:14.5px;}
+  .buyer-result .br-meta{font-size:12.5px;color:var(--ink-faint);margin-top:2px;}
+  .buyer-empty{font-size:13.5px;color:var(--ink-faint);text-align:center;padding:14px 0;}
+  .buyer-delete{
+    border:1px solid var(--line-strong);background:var(--panel);color:var(--danger);
+    width:32px;height:32px;border-radius:7px;cursor:pointer;font-size:15px;line-height:1;flex-shrink:0;
+  }
+  .buyer-delete:hover{background:var(--danger-tint);border-color:var(--danger);}
+  .buyer-actions{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;}
+  .select-all{font-size:13px;color:var(--steel);cursor:pointer;text-decoration:underline;}
+  .btn-export-selected{
+    font-family:'Public Sans',sans-serif;font-weight:600;font-size:13.5px;
+    padding:9px 16px;border:none;border-radius:7px;background:var(--ink);color:#fff;cursor:pointer;
+  }
+  .btn-export-selected:disabled{background:var(--ink-faint);cursor:default;}
+  .storage-note{font-size:12px;color:var(--ink-faint);margin-top:10px;}
+
+  .compare-vin-row{display:flex;gap:8px;margin-bottom:10px;}
+  .compare-vin-row input{
+    flex:1;font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:600;letter-spacing:.04em;
+    padding:9px 11px;border:1px solid var(--line-strong);border-radius:7px;background:var(--paper);color:var(--ink);text-transform:uppercase;
+  }
+  .compare-mini-btn{
+    font-family:'Public Sans',sans-serif;font-weight:600;font-size:12.5px;padding:0 14px;
+    border:none;border-radius:7px;background:var(--brass);color:#fff;cursor:pointer;white-space:nowrap;
+  }
+  .compare-mini-btn:hover{background:var(--brass-deep);}
+  .compare-mini-btn:disabled{background:var(--ink-faint);}
+  .btn-compare{
+    width:100%;margin-top:16px;font-family:'Public Sans',sans-serif;font-weight:600;font-size:14.5px;
+    padding:12px;border:none;border-radius:8px;background:var(--ink);color:#fff;cursor:pointer;
+  }
+  .btn-compare:hover{background:#3a352a;}
+  .compare-status{font-size:13px;margin-top:8px;padding:8px 12px;border-radius:6px;display:none;}
+  .compare-status.show{display:block;}
+
+  .spec-line{display:flex;justify-content:space-between;font-size:13.5px;padding:7px 0;border-bottom:1px solid var(--line);}
+  .spec-line:last-child{border-bottom:none;}
+  .spec-line .k{color:var(--ink-soft);}
+  .spec-line .v{font-weight:600;}
+  .spec-line.total{margin-top:2px;padding-top:10px;border-top:1.5px solid var(--line-strong);}
+  .spec-line.total .k{font-weight:600;color:var(--ink);}
+  .spec-line.total .v{color:var(--brass-deep);font-size:16px;}
+
+  .cmp-table{margin-top:20px;border:1px solid var(--line);border-radius:10px;overflow-x:auto;}
+  .cmp-row{display:grid;}
+  .cmp-row + .cmp-row{border-top:1px solid var(--line);}
+  .cmp-row.head{background:var(--brass-tint);font-weight:600;}
+  .cmp-cell{padding:9px 10px;font-size:12.5px;white-space:nowrap;}
+  .cmp-cell.attr{color:var(--ink-soft);font-weight:600;background:var(--paper);}
+  .cmp-cell.current{background:#FBF6EA;}
+  .cmp-good{color:var(--good);font-weight:700;}
+  .cmp-bad{color:var(--danger);font-weight:700;}
+
+  .summary-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin-top:20px;}
+  .summary-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:4px 11px;border-radius:20px;margin-bottom:12px;}
+  .summary-badge.good{background:var(--good-tint);color:var(--good);}
+  .summary-badge.mixed{background:var(--brass-tint);color:var(--brass-deep);}
+  .summary-badge.poor{background:var(--danger-tint);color:var(--danger);}
+  .summary-badge.none{background:var(--steel-tint);color:var(--steel);}
+  .summary-stats{margin:8px 0;font-size:13.5px;line-height:1.6;color:var(--ink-soft);}
+  .summary-line{font-size:14.5px;font-weight:600;margin-top:12px;color:var(--ink);}
+
+  .lessons-card{margin-top:16px;}
+  .lesson-item{padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;line-height:1.5;}
+  .lesson-item:last-child{border-bottom:none;}
+  .lesson-item b{color:var(--brass-deep);}
+
+  pre.output{
+    background:#1E1B15;color:#EDE8DA;border-radius:8px;padding:16px;font-size:12.5px;
+    font-family:'JetBrains Mono',monospace;overflow-x:auto;white-space:pre-wrap;word-break:break-word;
+    display:none;margin-top:16px;
+  }
+  pre.output.show{display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="adminBar" class="admin-bar">
+    <div class="admin-bar-user">
+      <span class="admin-pill">Admin</span>
+      <span id="adminEmailLabel">Loading...</span>
+    </div>
+    <button type="button" class="btn-signout" onclick="window.SupabaseAuth.signOutAdmin()">Sign Out</button>
+  </div>
+
+  <h1>Vehicle deals</h1>
+  <p class="sub">Compare a car you're considering against deals we've made before — or add a new deal to build that history.</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="compare" onclick="showTab('compare')">Compare</button>
+    <button class="tab-btn" data-tab="add" onclick="showTab('add')">Add a deal</button>
+    <button class="tab-btn" data-tab="find" onclick="showTab('find')">Find a car</button>
+  </div>
+
+  <!-- ===================== COMPARE (main feature) ===================== -->
+  <div class="tab-panel active" id="panel-compare">
+    <div class="card">
+      <p class="plate-label">Car you're considering</p>
+      <div class="compare-vin-row">
+        <input type="text" id="compareVinInput" placeholder="Paste VIN" maxlength="17">
+        <button class="compare-mini-btn" id="compareVinBtn" onclick="decodeCompareVin()">Decode</button>
+      </div>
+      <div class="compare-status" id="compareStatus"></div>
+      <div class="grid" style="margin-top:14px;">
+        <div class="field"><label>Asking / purchase price</label><input type="text" id="compareNewPrice" placeholder="$0"></div>
+        <div class="field"><label>Mileage</label><input type="text" id="compareNewMileage" placeholder="e.g. 71,000"></div>
+        <div class="field"><label>Estimated repairs</label><input type="text" id="compareNewRepairCost" placeholder="$0"></div>
+        <div class="field"><label>Other estimated costs</label><input type="text" id="compareNewOtherCosts" placeholder="$0"></div>
+      </div>
+      <button class="btn-compare" onclick="renderComparison()">Compare against our past deals</button>
+      <button class="btn-save btn-secondary" style="margin-top:10px;width:100%;" onclick="exportComparePdf()">Export comparison to PDF</button>
+    </div>
+
+    <div id="compareCurrentCard"></div>
+    <div id="compareTable"></div>
+    <div id="compareSummary"></div>
+    <div id="compareLessons"></div>
+  </div>
+
+  <!-- ===================== ADD A DEAL ===================== -->
+  <div class="tab-panel" id="panel-add">
+    <div class="plate">
+      <p class="plate-label">Vehicle identification</p>
+      <div class="plate-row">
+        <input type="text" id="vinInput" placeholder="Enter 17-character VIN" maxlength="17">
+        <button class="btn-fill" id="fillBtn" onclick="decodeVin()">Auto fill</button>
+      </div>
+      <p class="plate-alt">No VIN handy? <a onclick="toggleManualLookup()">Describe the vehicle instead</a></p>
+      <div id="manualLookup" style="display:none;margin-top:10px;">
+        <div class="plate-row">
+          <input type="text" id="descInput" placeholder="e.g. 2020 Honda Accord Sport 2.0T" style="text-transform:none;font-weight:500;font-size:14.5px;">
+          <button class="btn-fill" onclick="decodeDescription()">Look up</button>
+        </div>
+      </div>
+      <div class="status" id="statusBox"></div>
+    </div>
+
+    <p class="section-title">Photos</p>
+    <p class="section-note">Add a few shots — the first one you add is the cover photo unless you set another.</p>
+    <div class="card">
+      <div class="photo-drop" id="photoDrop" onclick="document.getElementById('photoInput').click()">
+        <div><strong>Click to upload</strong> or drag photos here</div>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
+      <div class="photo-gallery" id="photoGallery"></div>
+    </div>
+
+    <p class="section-title">Vehicle details</p>
+    <p class="section-note">Pulled from the VIN decoder where available — everything stays editable.</p>
+    <div class="card">
+      <div class="grid" id="vehicleGrid"></div>
+    </div>
+
+    <p class="section-title">The deal</p>
+    <p class="section-note">This is what makes future comparisons useful — the more you fill in, the better the comparisons get.</p>
+    <div class="card">
+      <div class="grid" id="ownerGrid"></div>
+      <div class="field field-full" style="margin-top:14px;">
+        <label for="lessonsLearned">What we learned</label>
+        <textarea id="lessonsLearned" placeholder="e.g. Easy to resell, but check the transmission carefully"></textarea>
+      </div>
+      <div class="field field-full" style="margin-top:14px;">
+        <label for="notes">Notes</label>
+        <textarea id="notes" placeholder="Anything else worth remembering about this vehicle"></textarea>
+      </div>
+    </div>
+
+    <p class="section-title">Custom fields</p>
+    <p class="section-note">Track anything the form above doesn't cover.</p>
+    <div class="card">
+      <div id="customFields"></div>
+      <button class="add-field-btn" onclick="addCustomField()">+ Add a field</button>
+    </div>
+
+    <div class="save-row">
+      <button class="btn-save" onclick="saveCar()">Save deal</button>
+      <button class="btn-save btn-secondary" onclick="exportPdf()">Export PDF</button>
+    </div>
+    <p class="saved-note" id="savedNote">Saved. Review the record below.</p>
+    <pre class="output" id="output"></pre>
+  </div>
+
+  <!-- ===================== FIND A CAR ===================== -->
+  <div class="tab-panel" id="panel-find">
+    <p class="section-title">Find a car</p>
+    <p class="section-note">Every deal you save is stored here — search by buyer name or VIN to see everything under them.</p>
+    <div class="card">
+      <div class="search-row">
+        <input type="text" id="buyerSearch" placeholder="Enter full buyer name or a VIN" oninput="searchByBuyer()">
+      </div>
+      <div class="buyer-results" id="buyerResults"></div>
+      <div class="buyer-actions" id="buyerActions" style="display:none;">
+        <span class="select-all" onclick="toggleSelectAll()">Select all</span>
+        <button class="btn-export-selected" id="exportSelectedBtn" onclick="exportSelectedToPdf()" disabled>Export selected to PDF</button>
+      </div>
+      <p class="storage-note" id="storageNote"></p>
+    </div>
+  </div>
+</div>
+
+<div id="printArea"></div>
+
+<script>
+function showTab(name){
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelector(`.tab-btn[data-tab="${name}"]`).classList.add('active');
+}
+
+const VEHICLE_FIELDS = [
+  {id:'vin', label:'VIN'},
+  {id:'year', label:'Year'},
+  {id:'make', label:'Make'},
+  {id:'model', label:'Model'},
+  {id:'trim', label:'Trim'},
+  {id:'engine', label:'Engine'},
+  {id:'transmission', label:'Transmission'},
+  {id:'bodyType', label:'Body type'},
+  {id:'driveType', label:'Drive type'},
+  {id:'fuelType', label:'Fuel type'},
+  {id:'exteriorColor', label:'Exterior color', full:false, note:'not VIN-decodable'},
+];
+
+const OWNER_FIELDS = [
+  {id:'status', label:'Status', type:'select', options:['Owned','Listed','Sold']},
+  {id:'buyerName', label:'Buyer', type:'text', placeholder:'Who bought / has the car'},
+  {id:'purchasePrice', label:'Purchase price', type:'text', placeholder:'$0'},
+  {id:'purchaseState', label:'Purchase state', type:'text', placeholder:'MD'},
+  {id:'purchaseDate', label:'Purchase date', type:'date'},
+  {id:'currentMileage', label:'Mileage at purchase', type:'text', placeholder:'e.g. 48,500'},
+  {id:'condition', label:'Condition', type:'text', placeholder:'e.g. Good, needs work'},
+  {id:'seller', label:'Seller', type:'text', placeholder:'Dealer, private party, auction'},
+  {id:'location', label:'Location', type:'text', placeholder:'Where the deal happened'},
+  {id:'titleStatus', label:'Title status', type:'select', options:['Clean','Salvage','Rebuilt','Lien','Other']},
+  {id:'repairs', label:'Repair notes', type:'text', placeholder:'List repairs, comma separated'},
+  {id:'repairCost', label:'Repair cost', type:'text', placeholder:'$0'},
+  {id:'otherCosts', label:'Other costs', type:'text', placeholder:'Transport, fees, etc.'},
+  {id:'saleInfo', label:'Sale information', type:'text', placeholder:'Pending, sold, asking price'},
+  {id:'salePrice', label:'Sale price', type:'text', placeholder:'$0 (if sold)'},
+  {id:'dealRating', label:'Deal rating', type:'select', options:['1','2','3','4','5']},
+];
+
+let autoFilledIds = new Set();
+let customFieldCount = 0;
+
+function buildVehicleGrid(){
+  const grid = document.getElementById('vehicleGrid');
+  grid.innerHTML = VEHICLE_FIELDS.map(f => `
+    <div class="field">
+      <div class="field-label-row">
+        <label for="v_${f.id}">${f.label}</label>
+        <span class="badge-auto" id="badge_${f.id}" style="display:none;">Auto-filled</span>
+      </div>
+      <input type="text" id="v_${f.id}" placeholder="${f.note ? f.note : '—'}">
+    </div>
+  `).join('');
+}
+
+function buildOwnerGrid(){
+  const grid = document.getElementById('ownerGrid');
+  grid.innerHTML = OWNER_FIELDS.map(f => {
+    const control = f.type === 'select'
+      ? `<select id="o_${f.id}">
+          <option value="">—</option>
+          ${f.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+        </select>`
+      : `<input type="${f.type}" id="o_${f.id}" placeholder="${f.placeholder || ''}">`;
+    return `
+    <div class="field">
+      <label for="o_${f.id}">${f.label}</label>
+      ${control}
+    </div>
+  `;
+  }).join('');
+}
+
+buildVehicleGrid();
+buildOwnerGrid();
+
+function toggleManualLookup(){
+  const el = document.getElementById('manualLookup');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function setStatus(msg, kind){
+  const box = document.getElementById('statusBox');
+  box.textContent = msg;
+  box.className = 'status show ' + kind;
+}
+
+function markAutoFilled(id, value){
+  const input = document.getElementById('v_' + id);
+  if(!input) return;
+  if(value && value.trim()){
+    input.value = value;
+    document.getElementById('badge_' + id).style.display = 'inline-block';
+    autoFilledIds.add(id);
+  }
+}
+
+function clearAutoBadges(){
+  VEHICLE_FIELDS.forEach(f => {
+    document.getElementById('badge_' + f.id).style.display = 'none';
+  });
+  autoFilledIds.clear();
+}
+
+async function decodeVin(){
+  const vin = document.getElementById('vinInput').value.trim().toUpperCase();
+  if(vin.length !== 17){
+    setStatus('VINs are 17 characters — double check and try again.', 'err');
+    return;
+  }
+  const btn = document.getElementById('fillBtn');
+  btn.disabled = true;
+  setStatus('Looking up VIN…', 'loading');
+  clearAutoBadges();
+
+  try{
+    const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
+    if(!res.ok) throw new Error('Request failed');
+    const data = await res.json();
+    const results = data.Results || [];
+    const get = (name) => {
+      const r = results.find(x => x.Variable === name);
+      return r ? r.Value : '';
+    };
+
+    const errorCode = get('Error Code');
+    if(errorCode && errorCode !== '0'){
+      const errText = get('Error Text');
+      setStatus(errText || 'That VIN didn\'t decode cleanly. Fields below are still editable by hand.', 'err');
+    } else {
+      setStatus('VIN decoded. Review the fields below before saving.', 'ok');
+    }
+
+    markAutoFilled('vin', vin);
+    markAutoFilled('year', get('Model Year'));
+    markAutoFilled('make', get('Make'));
+    markAutoFilled('model', get('Model'));
+    markAutoFilled('trim', get('Trim'));
+    const engine = [get('Engine Number of Cylinders') && get('Engine Number of Cylinders') + '-cyl', get('Displacement (L)') && get('Displacement (L)') + 'L', get('Engine Configuration')].filter(Boolean).join(' ');
+    markAutoFilled('engine', engine || get('Engine Model'));
+    markAutoFilled('transmission', get('Transmission Style'));
+    markAutoFilled('bodyType', get('Body Class'));
+    markAutoFilled('driveType', get('Drive Type'));
+    markAutoFilled('fuelType', get('Fuel Type - Primary'));
+  } catch(err){
+    setStatus('Couldn\'t reach the VIN decoder. Enter the details manually below.', 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function decodeDescription(){
+  const desc = document.getElementById('descInput').value.trim();
+  if(!desc){
+    setStatus('Type a year, make, and model to look up.', 'err');
+    return;
+  }
+  const parts = desc.split(/\s+/);
+  const yearMatch = parts.find(p => /^(19|20)\d{2}$/.test(p));
+  if(!yearMatch){
+    setStatus('Include a 4-digit year so the lookup can match it, e.g. "2020 Honda Accord".', 'err');
+    return;
+  }
+  const rest = parts.filter(p => p !== yearMatch);
+  const make = rest[0] || '';
+  const model = rest.slice(1).join(' ') || '';
+
+  setStatus('Looking up vehicle…', 'loading');
+  clearAutoBadges();
+
+  try{
+    const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeYear/make/${encodeURIComponent(make)}/modelyear/${yearMatch}?format=json`);
+    if(!res.ok) throw new Error('Request failed');
+    const data = await res.json();
+    const results = data.Results || [];
+    const matched = results.find(r => model.toLowerCase().includes(r.Model_Name.toLowerCase()) || r.Model_Name.toLowerCase().includes(model.toLowerCase()));
+
+    markAutoFilled('year', yearMatch);
+    markAutoFilled('make', make);
+    markAutoFilled('model', matched ? matched.Model_Name : model);
+
+    if(matched){
+      setStatus(`Matched ${yearMatch} ${make} ${matched.Model_Name}. Trim, engine, and other specs vary by VIN — enter those manually or paste the VIN above.`, 'ok');
+    } else {
+      setStatus('Matched year and make. Model wasn\'t exact — check the field, and fill remaining specs by hand.', 'err');
+    }
+  } catch(err){
+    setStatus('Couldn\'t reach the vehicle lookup. Enter the details manually below.', 'err');
+  }
+}
+
+let photos = [];
+let photoCount = 0;
+
+function renderPhotoGallery(){
+  const gallery = document.getElementById('photoGallery');
+  gallery.innerHTML = photos.map((p, i) => `
+    <div class="photo-thumb ${i === 0 ? 'is-cover' : ''}">
+      <img src="${p.dataUrl}" alt="${p.name}">
+      ${i === 0 ? '<div class="cover-tag">Cover</div>' : `<button class="make-cover" onclick="makeCover(${p.id})">Make cover</button>`}
+      <button class="photo-remove" onclick="removePhoto(${p.id})" aria-label="Remove photo">×</button>
+    </div>
+  `).join('');
+}
+
+function addPhotoFiles(files){
+  [...files].forEach(file => {
+    if(!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    photoCount++;
+    const id = photoCount;
+    reader.onload = (e) => {
+      photos.push({id, name: file.name, dataUrl: e.target.result});
+      renderPhotoGallery();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removePhoto(id){
+  photos = photos.filter(p => p.id !== id);
+  renderPhotoGallery();
+}
+
+function makeCover(id){
+  const idx = photos.findIndex(p => p.id === id);
+  if(idx > 0){
+    const [chosen] = photos.splice(idx, 1);
+    photos.unshift(chosen);
+    renderPhotoGallery();
+  }
+}
+
+const photoInput = document.getElementById('photoInput');
+photoInput.addEventListener('change', (e) => addPhotoFiles(e.target.files));
+
+const photoDrop = document.getElementById('photoDrop');
+['dragenter','dragover'].forEach(evt => {
+  photoDrop.addEventListener(evt, (e) => { e.preventDefault(); photoDrop.classList.add('drag'); });
+});
+['dragleave','drop'].forEach(evt => {
+  photoDrop.addEventListener(evt, (e) => { e.preventDefault(); photoDrop.classList.remove('drag'); });
+});
+photoDrop.addEventListener('drop', (e) => {
+  if(e.dataTransfer.files && e.dataTransfer.files.length) addPhotoFiles(e.dataTransfer.files);
+});
+
+function addCustomField(label, value){
+  customFieldCount++;
+  const id = 'custom_' + customFieldCount;
+  const wrap = document.getElementById('customFields');
+  const row = document.createElement('div');
+  row.className = 'custom-row';
+  row.id = 'row_' + id;
+  row.innerHTML = `
+    <div class="field">
+      <label>Field name</label>
+      <input type="text" id="${id}_label" placeholder="e.g. License plate" value="${label ? label.replace(/"/g,'&quot;') : ''}">
+    </div>
+    <div class="field">
+      <label>Value</label>
+      <input type="text" id="${id}_value" placeholder="e.g. 7ABC123" value="${value ? value.replace(/"/g,'&quot;') : ''}">
+    </div>
+    <button class="remove-btn" onclick="document.getElementById('row_${id}').remove()" aria-label="Remove field">×</button>
+  `;
+  wrap.appendChild(row);
+}
+
+// --- Storage layer: uses Claude's artifact storage when available, falls back to localStorage ---
+const hasClaudeStorage = typeof window.storage !== 'undefined';
+
+async function storeGet(key){
+  if(hasClaudeStorage){
+    try{ const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; }
+    catch(e){ return null; }
+  }
+  const raw = localStorage.getItem(key);
+  return raw ? JSON.parse(raw) : null;
+}
+async function storeSet(key, value){
+  if(hasClaudeStorage){
+    try{ await window.storage.set(key, JSON.stringify(value)); return; }
+    catch(e){ /* fall through */ }
+  }
+  localStorage.setItem(key, JSON.stringify(value));
+}
+async function storeDelete(key){
+  if(hasClaudeStorage){
+    try{ await window.storage.delete(key); return; }
+    catch(e){ /* fall through */ }
+  }
+  localStorage.removeItem(key);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const note = document.getElementById('storageNote');
+  if(note){
+    note.textContent = hasClaudeStorage
+      ? 'Saved deals persist here in Claude.'
+      : 'Saved deals are stored in this browser only — they won\'t follow you to another device.';
+  }
+});
+
+function getRecord(){
+  const record = {vehicle: {}, photos: {}, records: {}, custom: {}};
+  if(photos.length){
+    record.photos.count = photos.length;
+    record.photos.cover = photos[0].name;
+    record.photos.files = photos.map(p => p.name);
+  }
+  VEHICLE_FIELDS.forEach(f => {
+    const val = document.getElementById('v_' + f.id).value.trim();
+    if(val) record.vehicle[f.label] = val;
+  });
+  OWNER_FIELDS.forEach(f => {
+    const val = document.getElementById('o_' + f.id).value.trim();
+    if(val) record.records[f.label] = val;
+  });
+  const lessons = document.getElementById('lessonsLearned').value.trim();
+  if(lessons) record.records['What we learned'] = lessons;
+  const notes = document.getElementById('notes').value.trim();
+  if(notes) record.records['Notes'] = notes;
+
+  document.querySelectorAll('.custom-row').forEach(row => {
+    const labelInput = row.querySelector('input[id$="_label"]');
+    const valueInput = row.querySelector('input[id$="_value"]');
+    const label = labelInput.value.trim();
+    const value = valueInput.value.trim();
+    if(label) record.custom[label] = value;
+  });
+  return record;
+}
+
+async function saveCar(){
+  const record = getRecord();
+  const out = document.getElementById('output');
+  out.textContent = JSON.stringify(record, null, 2);
+  out.className = 'output show';
+  const note = document.getElementById('savedNote');
+  note.className = 'saved-note show';
+
+  const id = 'car_' + Date.now();
+  const title = [record.vehicle['Year'], record.vehicle['Make'], record.vehicle['Model'], record.vehicle['Trim']].filter(Boolean).join(' ') || 'Vehicle record';
+  const buyerName = record.records['Buyer'] || '';
+  const vin = record.vehicle['VIN'] || '';
+  const stored = {id, title, buyerName, vin, savedAt: new Date().toISOString(), record, photos: photos.slice(0,3)};
+
+  await storeSet(id, stored);
+  const index = (await storeGet('carIndex')) || [];
+  index.push(id);
+  await storeSet('carIndex', index);
+  await loadSavedCarsForCompare();
+}
+
+function buildPrintSections(entries){
+  const section = (heading, obj) => {
+    const rows = Object.entries(obj).map(([k,v]) => `<div class="print-row"><span>${k}</span><span>${v}</span></div>`).join('');
+    return rows ? `<div class="print-section">${heading}</div>${rows}` : '';
+  };
+  return entries.map(({title, record, photos: p}) => {
+    const capped = (p || []).slice(0, 6);
+    const photoBlock = capped.length
+      ? `<div class="print-section">Photos</div><div class="print-photos">${capped.map(ph => `<img src="${ph.dataUrl}" alt="${ph.name}">`).join('')}</div>`
+      : '';
+    return `
+      <div class="print-page">
+        <div class="print-title">${title}</div>
+        <div class="print-sub">Vehicle record exported ${new Date().toLocaleDateString()}</div>
+        ${section('Vehicle details', record.vehicle)}
+        ${section('The deal', record.records)}
+        ${section('Custom fields', record.custom)}
+        ${photoBlock}
+      </div>
+    `;
+  }).join('');
+}
+
+function exportPdf(){
+  const record = getRecord();
+  const title = [record.vehicle['Year'], record.vehicle['Make'], record.vehicle['Model'], record.vehicle['Trim']].filter(Boolean).join(' ') || 'Vehicle record';
+  document.getElementById('printArea').innerHTML = buildPrintSections([{title, record, photos}]);
+  window.print();
+}
+
+// --- Buyer search ---
+let buyerMatches = [];
+
+async function searchByBuyer(){
+  const query = document.getElementById('buyerSearch').value.trim().toLowerCase();
+  const resultsEl = document.getElementById('buyerResults');
+  const actionsEl = document.getElementById('buyerActions');
+
+  if(!query){
+    resultsEl.innerHTML = '';
+    actionsEl.style.display = 'none';
+    buyerMatches = [];
+    return;
+  }
+
+  const index = (await storeGet('carIndex')) || [];
+  const all = await Promise.all(index.map(id => storeGet(id)));
+  buyerMatches = all.filter(c => c && (
+    (c.buyerName && c.buyerName.trim().toLowerCase() === query) ||
+    (c.vin && c.vin.toLowerCase().includes(query))
+  ));
+
+  if(!buyerMatches.length){
+    resultsEl.innerHTML = '<div class="buyer-empty">No match — enter the buyer\'s full name exactly, or a VIN.</div>';
+    actionsEl.style.display = 'none';
+    return;
+  }
+
+  actionsEl.style.display = 'flex';
+  resultsEl.innerHTML = buyerMatches.map((c, i) => `
+    <div class="buyer-result">
+      <label style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;">
+        <input type="checkbox" class="buyer-check" data-idx="${i}" onchange="updateExportButton()">
+        <div class="br-info">
+          <div class="br-title">${c.title}</div>
+          <div class="br-meta">${c.buyerName ? 'Buyer: ' + c.buyerName + ' · ' : ''}${c.vin ? 'VIN: ' + c.vin + ' · ' : ''}Saved ${new Date(c.savedAt).toLocaleDateString()}</div>
+        </div>
+      </label>
+      <button class="buyer-delete" onclick="deleteCar('${c.id}')" aria-label="Delete this car" title="Delete">×</button>
+    </div>
+  `).join('');
+  updateExportButton();
+}
+
+async function deleteCar(id){
+  if(!confirm('Delete this car\'s saved data? This can\'t be undone.')) return;
+  await storeDelete(id);
+  const index = (await storeGet('carIndex')) || [];
+  await storeSet('carIndex', index.filter(i => i !== id));
+  await searchByBuyer();
+  await loadSavedCarsForCompare();
+}
+
+function updateExportButton(){
+  const checked = document.querySelectorAll('.buyer-check:checked').length;
+  document.getElementById('exportSelectedBtn').disabled = checked === 0;
+}
+
+function toggleSelectAll(){
+  const boxes = document.querySelectorAll('.buyer-check');
+  const allChecked = [...boxes].every(b => b.checked);
+  boxes.forEach(b => b.checked = !allChecked);
+  updateExportButton();
+}
+
+function exportSelectedToPdf(){
+  const selected = [...document.querySelectorAll('.buyer-check:checked')].map(b => buyerMatches[+b.dataset.idx]);
+  if(!selected.length) return;
+  document.getElementById('printArea').innerHTML = buildPrintSections(selected);
+  window.print();
+}
+
+// ===================== COMPARE — the main feature =====================
+let compareNewVehicle = {};
+let compareMatches = [];
+let allSavedCars = [];
+let lastCompare = null;
+
+async function loadSavedCarsForCompare(){
+  const index = (await storeGet('carIndex')) || [];
+  allSavedCars = (await Promise.all(index.map(id => storeGet(id)))).filter(Boolean);
+  allSavedCars.sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt));
+}
+
+function setCompareStatus(msg, kind){
+  const box = document.getElementById('compareStatus');
+  box.textContent = msg;
+  box.className = msg ? 'compare-status show ' + kind : 'compare-status';
+}
+
+function norm(s){ return (s || '').toString().trim().toLowerCase(); }
+
+function toNumber(str){
+  if(str === undefined || str === null || str === '') return null;
+  const n = parseFloat(String(str).replace(/[^0-9.\-]/g,''));
+  return isNaN(n) ? null : n;
+}
+function fmtMoney(n){ return n == null ? '—' : '$' + Math.round(n).toLocaleString(); }
+function fmtNum(n){ return n == null ? '—' : Math.round(n).toLocaleString(); }
+function average(nums){
+  const vals = nums.filter(n => n != null);
+  if(!vals.length) return null;
+  return vals.reduce((a,b) => a+b, 0) / vals.length;
+}
+
+function dealMetrics(c){
+  const r = c.record.records || {};
+  const purchase = toNumber(r['Purchase price']);
+  const repairCost = toNumber(r['Repair cost']);
+  const otherCosts = toNumber(r['Other costs']);
+  const salePrice = toNumber(r['Sale price']);
+  const mileage = toNumber(r['Mileage at purchase']);
+  const totalInvested = purchase != null ? purchase + (repairCost || 0) + (otherCosts || 0) : null;
+  const netProfit = (salePrice != null && totalInvested != null) ? salePrice - totalInvested : null;
+  return {
+    id: c.id, title: c.title, buyer: c.buyerName || '', vehicle: c.record.vehicle || {},
+    purchase, repairCost, otherCosts, salePrice, mileage, totalInvested, netProfit,
+    rating: r['Deal rating'] || null, lessons: r['What we learned'] || '', savedAt: c.savedAt
+  };
+}
+
+async function decodeCompareVin(){
+  const vin = document.getElementById('compareVinInput').value.trim().toUpperCase();
+  if(vin.length !== 17){
+    setCompareStatus('VINs are 17 characters — double check and try again.', 'err');
+    return;
+  }
+  const btn = document.getElementById('compareVinBtn');
+  btn.disabled = true;
+  setCompareStatus('Looking up VIN…', 'loading');
+
+  try{
+    const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
+    if(!res.ok) throw new Error('Request failed');
+    const data = await res.json();
+    const results = data.Results || [];
+    const get = (name) => {
+      const r = results.find(x => x.Variable === name);
+      return r ? r.Value : '';
+    };
+    const engine = [get('Engine Number of Cylinders') && get('Engine Number of Cylinders') + '-cyl', get('Displacement (L)') && get('Displacement (L)') + 'L', get('Engine Configuration')].filter(Boolean).join(' ');
+
+    compareNewVehicle = {
+      VIN: vin,
+      Year: get('Model Year'),
+      Make: get('Make'),
+      Model: get('Model'),
+      Trim: get('Trim'),
+      Engine: engine || get('Engine Model'),
+      Transmission: get('Transmission Style'),
+      'Body type': get('Body Class'),
+      'Drive type': get('Drive Type'),
+      'Fuel type': get('Fuel Type - Primary'),
+    };
+
+    await loadSavedCarsForCompare();
+    compareMatches = allSavedCars.filter(c => {
+      const v = c.record.vehicle || {};
+      return norm(v.Year) === norm(compareNewVehicle.Year)
+        && norm(v.Make) === norm(compareNewVehicle.Make)
+        && norm(v.Model) === norm(compareNewVehicle.Model);
+    });
+
+    if(compareMatches.length){
+      setCompareStatus(`Found ${compareMatches.length} past deal${compareMatches.length > 1 ? 's' : ''} on a ${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model}. Add what you know, then compare.`, 'ok');
+    } else {
+      setCompareStatus(`No past deals on a ${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model} yet — you can still see the numbers you enter below.`, 'err');
+    }
+  } catch(err){
+    setCompareStatus("Couldn't reach the VIN decoder. Try again once you're online.", 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderComparison(){
+  if(!compareNewVehicle.VIN){
+    setCompareStatus('Paste and decode a VIN first.', 'err');
+    return;
+  }
+
+  const newPrice = toNumber(document.getElementById('compareNewPrice').value);
+  const newMileage = toNumber(document.getElementById('compareNewMileage').value);
+  const newRepairCost = toNumber(document.getElementById('compareNewRepairCost').value);
+  const newOtherCosts = toNumber(document.getElementById('compareNewOtherCosts').value);
+  const newTotalInvested = newPrice != null ? newPrice + (newRepairCost || 0) + (newOtherCosts || 0) : null;
+
+  const title = [compareNewVehicle.Year, compareNewVehicle.Make, compareNewVehicle.Model, compareNewVehicle.Trim].filter(Boolean).join(' ');
+
+  document.getElementById('compareCurrentCard').innerHTML = `
+    <div class="card" style="margin-top:20px;">
+      <p class="plate-label">Car you're considering</p>
+      <div class="spec-line"><span class="k">Vehicle</span><span class="v">${title || '—'}</span></div>
+      <div class="spec-line"><span class="k">VIN</span><span class="v">${compareNewVehicle.VIN}</span></div>
+      <div class="spec-line"><span class="k">Mileage</span><span class="v">${fmtNum(newMileage)}</span></div>
+      <div class="spec-line"><span class="k">Asking price</span><span class="v">${fmtMoney(newPrice)}</span></div>
+      <div class="spec-line"><span class="k">Estimated repairs</span><span class="v">${fmtMoney(newRepairCost)}</span></div>
+      <div class="spec-line total"><span class="k">Estimated total investment</span><span class="v">${fmtMoney(newTotalInvested)}</span></div>
+    </div>
+  `;
+
+  if(!compareMatches.length){
+    document.getElementById('compareTable').innerHTML = '';
+    document.getElementById('compareSummary').innerHTML = `
+      <div class="summary-card">
+        <span class="summary-badge none">Not enough history to compare</span>
+        <p class="summary-stats">We haven't saved a deal on a ${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model} yet, so there's nothing to stack this one against. Save this deal once it's done to start building history for next time.</p>
+      </div>
+    `;
+    document.getElementById('compareLessons').innerHTML = '';
+    lastCompare = {
+      title, vin: compareNewVehicle.VIN, newMileage, newPrice, newRepairCost, newTotalInvested,
+      deals: [], badgeText: 'Not enough history to compare',
+      historyText: `We haven't saved a deal on a ${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model} yet.`,
+      statsLines: [], deltas: [], verdict: '', lessons: []
+    };
+    return;
+  }
+
+  const deals = compareMatches.map(dealMetrics);
+  const avgPurchase = average(deals.map(d => d.purchase));
+  const avgMileage = average(deals.map(d => d.mileage));
+  const avgRepairCost = average(deals.map(d => d.repairCost));
+  const avgTotalInvested = average(deals.map(d => d.totalInvested));
+  const soldDeals = deals.filter(d => d.netProfit != null);
+  const avgNetProfit = average(soldDeals.map(d => d.netProfit));
+  const profitableCount = soldDeals.filter(d => d.netProfit > 0).length;
+
+  const colTemplate = `150px repeat(${deals.length + 1}, minmax(105px, 1fr))`;
+
+  function cellClass(currentVal, avgVal, lowerIsBetter){
+    if(currentVal == null || avgVal == null || currentVal === avgVal) return '';
+    const better = lowerIsBetter ? currentVal < avgVal : currentVal > avgVal;
+    return better ? 'cmp-good' : 'cmp-bad';
+  }
+
+  function row(label, currentDisplay, currentClass, dealFn){
+    const cells = deals.map(d => `<div class="cmp-cell">${dealFn(d)}</div>`).join('');
+    return `<div class="cmp-row">
+      <div class="cmp-cell attr">${label}</div>
+      <div class="cmp-cell current ${currentClass}">${currentDisplay}</div>
+      ${cells}
+    </div>`;
+  }
+
+  const headerCells = `<div class="cmp-cell attr">&nbsp;</div>` +
+    `<div class="cmp-cell current">Current Car</div>` +
+    deals.map(d => `<div class="cmp-cell">${d.buyer ? d.buyer + "'s Deal" : d.title}</div>`).join('');
+
+  const netProfitRow = `<div class="cmp-row">
+    <div class="cmp-cell attr">Net profit</div>
+    <div class="cmp-cell current">—</div>
+    ${deals.map(d => `<div class="cmp-cell ${d.netProfit == null ? '' : (d.netProfit > 0 ? 'cmp-good' : (d.netProfit < 0 ? 'cmp-bad' : ''))}">${d.netProfit == null ? '—' : (d.netProfit > 0 ? '+' : '') + fmtMoney(d.netProfit)}</div>`).join('')}
+  </div>`;
+
+  const rowsHtml = [
+    row('Year', compareNewVehicle.Year || '—', '', d => d.vehicle.Year || '—'),
+    row('Model', [compareNewVehicle.Model, compareNewVehicle.Trim].filter(Boolean).join(' ') || '—', '', d => [d.vehicle.Model, d.vehicle.Trim].filter(Boolean).join(' ') || '—'),
+    row('Mileage', fmtNum(newMileage), cellClass(newMileage, avgMileage, true), d => fmtNum(d.mileage)),
+    row('Purchase', fmtMoney(newPrice), cellClass(newPrice, avgPurchase, true), d => fmtMoney(d.purchase)),
+    row('Repairs', fmtMoney(newRepairCost), cellClass(newRepairCost, avgRepairCost, true), d => fmtMoney(d.repairCost)),
+    row('Total invested', fmtMoney(newTotalInvested), cellClass(newTotalInvested, avgTotalInvested, true), d => fmtMoney(d.totalInvested)),
+    row('Sale price', '—', '', d => fmtMoney(d.salePrice)),
+    netProfitRow,
+    row('Deal rating', '—', '', d => d.rating ? d.rating + '/5' : '—'),
+    row('Date saved', 'Today', '', d => new Date(d.savedAt).toLocaleDateString()),
+  ].join('');
+
+  document.getElementById('compareTable').innerHTML = `
+    <p class="section-title" style="margin-top:24px;font-size:16px;">Our previous deals</p>
+    <div class="cmp-table">
+      <div class="cmp-row head">${headerCells}</div>
+      ${rowsHtml}
+    </div>
+  `;
+  document.querySelectorAll('#compareTable .cmp-row').forEach(r => r.style.gridTemplateColumns = colTemplate);
+
+  // Summary
+  let historyLabel, historyText;
+  if(soldDeals.length){
+    const ratio = profitableCount / soldDeals.length;
+    historyLabel = ratio >= 0.6 ? 'good' : (ratio <= 0.4 ? 'poor' : 'mixed');
+    historyText = `We've bought ${deals.length} similar ${deals.length === 1 ? 'car' : 'cars'}. ${profitableCount} of ${soldDeals.length} sold ${profitableCount === 1 ? 'was' : 'were'} profitable.`;
+  } else {
+    historyLabel = 'mixed';
+    historyText = `We've bought ${deals.length} similar ${deals.length === 1 ? 'car' : 'cars'}, but none has sold yet — so there's no profit history, only price, mileage, and repairs to compare.`;
+  }
+
+  const statsLines = [];
+  if(avgPurchase != null) statsLines.push(`Average purchase price: ${fmtMoney(avgPurchase)}`);
+  if(avgRepairCost != null) statsLines.push(`Average repair cost: ${fmtMoney(avgRepairCost)}`);
+  if(avgNetProfit != null) statsLines.push(`Average net profit: ${(avgNetProfit > 0 ? '+' : '') + fmtMoney(avgNetProfit)}`);
+
+  const deltas = [];
+  if(newPrice != null && avgPurchase != null){
+    const diff = Math.abs(newPrice - avgPurchase);
+    if(diff > 0) deltas.push(`${fmtMoney(diff)} ${newPrice < avgPurchase ? 'below' : 'above'} our average purchase price`);
+  }
+  if(newMileage != null && avgMileage != null){
+    const diff = Math.abs(newMileage - avgMileage);
+    if(diff > 0) deltas.push(`${fmtNum(diff)} miles ${newMileage < avgMileage ? 'below' : 'above'} our average mileage`);
+  }
+  if(newRepairCost != null && avgRepairCost != null){
+    const diff = Math.abs(newRepairCost - avgRepairCost);
+    if(diff > 0) deltas.push(`${fmtMoney(diff)} ${newRepairCost < avgRepairCost ? 'below' : 'above'} our average repair cost`);
+  }
+
+  let favorable = 0, unfavorable = 0;
+  if(newPrice != null && avgPurchase != null && newPrice !== avgPurchase) (newPrice < avgPurchase ? favorable++ : unfavorable++);
+  if(newMileage != null && avgMileage != null && newMileage !== avgMileage) (newMileage < avgMileage ? favorable++ : unfavorable++);
+  if(newRepairCost != null && avgRepairCost != null && newRepairCost !== avgRepairCost) (newRepairCost < avgRepairCost ? favorable++ : unfavorable++);
+
+  let verdict;
+  if(favorable === 0 && unfavorable === 0) verdict = 'Not enough numbers entered yet to compare on price, mileage, or repairs.';
+  else if(favorable > unfavorable) verdict = 'Looks better than our average deal on the numbers we have.';
+  else if(unfavorable > favorable) verdict = 'Higher risk based on our previous experience with this model.';
+  else verdict = 'Similar to our previous deals overall.';
+
+  const badgeText = {good:'Our history with this model: GOOD', mixed:'Our history with this model: MIXED', poor:'Our history with this model: POOR'}[historyLabel];
+
+  document.getElementById('compareSummary').innerHTML = `
+    <div class="summary-card">
+      <span class="summary-badge ${historyLabel}">${badgeText}</span>
+      <p class="summary-stats">${historyText}</p>
+      ${statsLines.length ? `<p class="summary-stats">${statsLines.join(' · ')}</p>` : ''}
+      ${deltas.length ? `<p class="summary-stats">The car you're considering is ${deltas.join(', ')}.</p>` : ''}
+      <p class="summary-line">${verdict}</p>
+    </div>
+  `;
+
+  const lessons = deals.filter(d => d.lessons);
+  document.getElementById('compareLessons').innerHTML = lessons.length ? `
+    <div class="card lessons-card">
+      <p class="section-title" style="font-size:15px;">What our friends learned</p>
+      ${lessons.map(d => `<div class="lesson-item"><b>${d.buyer || d.title}:</b> ${d.lessons}</div>`).join('')}
+    </div>
+  ` : '';
+
+  lastCompare = {
+    title, vin: compareNewVehicle.VIN, newMileage, newPrice, newRepairCost, newTotalInvested,
+    deals, badgeText, historyText, statsLines, deltas, verdict, lessons
+  };
+}
+
+function exportComparePdf(){
+  if(!lastCompare){
+    setCompareStatus('Run a comparison first, then export it.', 'err');
+    return;
+  }
+  const c = lastCompare;
+
+  const currentBlock = `
+    <div class="print-section">Car considered</div>
+    <div class="print-row"><span>Vehicle</span><span>${c.title || '—'}</span></div>
+    <div class="print-row"><span>VIN</span><span>${c.vin || '—'}</span></div>
+    <div class="print-row"><span>Mileage</span><span>${fmtNum(c.newMileage)}</span></div>
+    <div class="print-row"><span>Asking price</span><span>${fmtMoney(c.newPrice)}</span></div>
+    <div class="print-row"><span>Estimated repairs</span><span>${fmtMoney(c.newRepairCost)}</span></div>
+    <div class="print-row"><span>Estimated total investment</span><span>${fmtMoney(c.newTotalInvested)}</span></div>
+  `;
+
+  const dealsBlock = c.deals.length ? c.deals.map(d => `
+    <div class="print-section">${d.buyer ? d.buyer + "'s deal" : d.title}</div>
+    <div class="print-row"><span>Vehicle</span><span>${[d.vehicle.Year, d.vehicle.Make, d.vehicle.Model, d.vehicle.Trim].filter(Boolean).join(' ') || '—'}</span></div>
+    <div class="print-row"><span>Mileage</span><span>${fmtNum(d.mileage)}</span></div>
+    <div class="print-row"><span>Purchase price</span><span>${fmtMoney(d.purchase)}</span></div>
+    <div class="print-row"><span>Repairs</span><span>${fmtMoney(d.repairCost)}</span></div>
+    <div class="print-row"><span>Total invested</span><span>${fmtMoney(d.totalInvested)}</span></div>
+    <div class="print-row"><span>Sale price</span><span>${fmtMoney(d.salePrice)}</span></div>
+    <div class="print-row"><span>Net profit</span><span>${d.netProfit == null ? '—' : (d.netProfit > 0 ? '+' : '') + fmtMoney(d.netProfit)}</span></div>
+    <div class="print-row"><span>Deal rating</span><span>${d.rating ? d.rating + '/5' : '—'}</span></div>
+    <div class="print-row"><span>Date saved</span><span>${new Date(d.savedAt).toLocaleDateString()}</span></div>
+  `).join('') : `<div class="print-section">Our previous deals</div><div class="print-row"><span>No saved deals on this model yet</span><span></span></div>`;
+
+  const summaryBlock = `
+    <div class="print-section">Comparison summary</div>
+    <div class="print-row"><span>${c.badgeText}</span><span></span></div>
+    <div class="print-row"><span>${c.historyText}</span><span></span></div>
+    ${c.statsLines.map(s => `<div class="print-row"><span>${s}</span><span></span></div>`).join('')}
+    ${c.deltas.length ? `<div class="print-row"><span>The car considered is ${c.deltas.join(', ')}.</span><span></span></div>` : ''}
+    ${c.verdict ? `<div class="print-row"><span>${c.verdict}</span><span></span></div>` : ''}
+  `;
+
+  const lessonsBlock = c.lessons.length ? `
+    <div class="print-section">What our friends learned</div>
+    ${c.lessons.map(d => `<div class="print-row"><span>${d.buyer || d.title}</span><span>${d.lessons}</span></div>`).join('')}
+  ` : '';
+
+  document.getElementById('printArea').innerHTML = `
+    <div class="print-page">
+      <div class="print-title">Comparing: ${c.title || 'Vehicle'}</div>
+      <div class="print-sub">Comparison exported ${new Date().toLocaleDateString()}</div>
+      ${currentBlock}
+      ${dealsBlock}
+      ${summaryBlock}
+      ${lessonsBlock}
+    </div>
+  `;
+  window.print();
+}
+
+async function initAdminAuth() {
+  if (window.SupabaseAuth && window.SupabaseAuth.isSupabaseConfigured()) {
+    const user = await window.SupabaseAuth.requireAdminAuth();
+    if (!user) return;
+    const bar = document.getElementById('adminBar');
+    const emailLabel = document.getElementById('adminEmailLabel');
+    if (bar && emailLabel) {
+      emailLabel.textContent = user.email;
+      bar.style.display = 'flex';
+    }
+  } else {
+    const bar = document.getElementById('adminBar');
+    const emailLabel = document.getElementById('adminEmailLabel');
+    if (bar && emailLabel) {
+      emailLabel.innerHTML = 'Supabase Auth unconfigured · <a href="login.html" style="color:var(--brass);text-decoration:underline;font-weight:600;">Setup & Login</a>';
+      bar.style.display = 'flex';
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initAdminAuth();
+  loadSavedCarsForCompare();
+});
+</script>
+</body>
+</html>
