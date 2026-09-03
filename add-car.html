@@ -1069,6 +1069,9 @@ function showTab(name){
   if(target) target.classList.add('active');
   const btn = document.querySelector(`.tab-btn[data-tab="${name}"]`);
   if(btn) btn.classList.add('active');
+  if(name === 'find') {
+    searchByBuyer();
+  }
 }
 
 const VEHICLE_FIELDS = [
@@ -1439,45 +1442,48 @@ async function saveCar(){
     return maxLen ? s.substring(0, maxLen) : s;
   }
 
+  // Direct reading from element IDs (100% reliable, immune to language dictionaries)
+  const getVal = (id) => (document.getElementById(id)?.value || '').trim();
+
   // Safe VIN sanitization: strip spaces/dashes and prevent > 17 char overflow
-  let cleanVin = (record.vehicle['VIN'] || '').toString().trim().replace(/[\s\-_]+/g, '').toUpperCase();
+  let cleanVin = getVal('v_vin').replace(/[\s\-_]+/g, '').toUpperCase();
   if (cleanVin.length > 17) {
     cleanVin = cleanVin.substring(0, 17);
   }
 
   const dealPayload = {
     vin: cleanVin,
-    year: cleanStr(record.vehicle['Year'], 10),
-    make: cleanStr(record.vehicle['Make'], 100),
-    model: cleanStr(record.vehicle['Model'], 100),
-    trim: cleanStr(record.vehicle['Trim'], 100),
-    engine: cleanStr(record.vehicle['Engine'], 150),
-    transmission: cleanStr(record.vehicle['Transmission'], 100),
-    body_type: cleanStr(record.vehicle['Body type'], 100),
-    drive_type: cleanStr(record.vehicle['Drive type'], 100),
-    fuel_type: cleanStr(record.vehicle['Fuel type'], 100),
-    exterior_color: cleanStr(record.vehicle['Exterior color'], 100),
+    year: cleanStr(getVal('v_year'), 10),
+    make: cleanStr(getVal('v_make'), 100),
+    model: cleanStr(getVal('v_model'), 100),
+    trim: cleanStr(getVal('v_trim'), 100),
+    engine: cleanStr(getVal('v_engine'), 150),
+    transmission: cleanStr(getVal('v_transmission'), 100),
+    body_type: cleanStr(getVal('v_bodyType'), 100),
+    drive_type: cleanStr(getVal('v_driveType'), 100),
+    fuel_type: cleanStr(getVal('v_fuelType'), 100),
+    exterior_color: cleanStr(getVal('v_exteriorColor'), 100),
 
-    status: cleanStr(record.records['Status'], 50) || 'Owned',
-    buyer_name: cleanStr(record.records['Buyer'], 150),
-    purchase_price: toNumber(record.records['Purchase price'], 99999999),
-    purchase_state: cleanStr(record.records['Purchase state'], 50),
-    purchase_date: record.records['Purchase date'] || null,
-    mileage: toNumber(record.records['Mileage at purchase'], 9999999),
-    condition: cleanStr(record.records['Condition'], 100),
-    seller: cleanStr(record.records['Seller'], 150),
-    location: cleanStr(record.records['Location'], 150),
-    title_status: cleanStr(record.records['Title status'], 50) || 'Clean',
+    status: cleanStr(getVal('o_status'), 50) || 'Owned',
+    buyer_name: cleanStr(getVal('o_buyerName'), 150),
+    purchase_price: toNumber(getVal('o_purchasePrice'), 99999999),
+    purchase_state: cleanStr(getVal('o_purchaseState'), 50),
+    purchase_date: getVal('o_purchaseDate') || null,
+    mileage: toNumber(getVal('o_currentMileage'), 9999999),
+    condition: cleanStr(getVal('o_condition'), 100),
+    seller: cleanStr(getVal('o_seller'), 150),
+    location: cleanStr(getVal('o_location'), 150),
+    title_status: cleanStr(getVal('o_titleStatus'), 50) || 'Clean',
 
-    repair_notes: cleanStr(record.records['Repair notes'], 1000),
-    repair_cost: toNumber(record.records['Repair cost'], 99999999) || 0,
-    other_costs: toNumber(record.records['Other costs'], 99999999) || 0,
-    sale_info: cleanStr(record.records['Sale information'], 150),
-    sale_price: toNumber(record.records['Sale price'], 99999999),
-    deal_rating: Math.min(Math.max(toNumber(record.records['Deal rating']) || 0, 1), 5) || null,
+    repair_notes: cleanStr(getVal('o_repairs'), 1000),
+    repair_cost: toNumber(getVal('o_repairCost'), 99999999) || 0,
+    other_costs: toNumber(getVal('o_otherCosts'), 99999999) || 0,
+    sale_info: cleanStr(getVal('o_saleInfo'), 150),
+    sale_price: toNumber(getVal('o_salePrice'), 99999999),
+    deal_rating: Math.min(Math.max(toNumber(getVal('o_dealRating')) || 0, 1), 5) || null,
 
-    lessons_learned: record.records['What we learned'] || '',
-    notes: record.records['Notes'] || '',
+    lessons_learned: cleanStr(getVal('lessonsLearned'), 2000),
+    notes: cleanStr(getVal('notes'), 2000),
 
     custom_fields: record.custom || {},
     photos: uploadedPhotos
@@ -1490,6 +1496,7 @@ async function saveCar(){
     note.className = 'status-box ok show';
 
     await loadSavedCarsForCompare();
+    searchByBuyer();
   } catch(err) {
     console.error('Save error:', err);
     const note = document.getElementById('savedNote');
@@ -1547,47 +1554,62 @@ function exportPdf(){
 let buyerMatches = [];
 
 async function searchByBuyer(){
-  const query = document.getElementById('buyerSearch').value.trim().toLowerCase();
+  const queryInput = document.getElementById('buyerSearch');
+  const query = queryInput ? queryInput.value.trim().toLowerCase() : '';
   const resultsEl = document.getElementById('buyerResults');
   const actionsEl = document.getElementById('buyerActions');
 
   if(!query){
-    resultsEl.innerHTML = '';
-    actionsEl.style.display = 'none';
-    buyerMatches = [];
-    return;
+    buyerMatches = allSavedCars || [];
+  } else {
+    buyerMatches = await window.SupabaseAuth.searchDealsInCloud(query);
   }
-
-  buyerMatches = await window.SupabaseAuth.searchDealsInCloud(query);
 
   if(!buyerMatches.length){
     const emptyMsg = window.I18n ? window.I18n.t('find.empty') : 'No matching deals in cloud database. Try a different buyer name or VIN.';
-    resultsEl.innerHTML = `<div style="font-size:13.5px;color:var(--ink-soft);text-align:center;padding:20px 0;">${emptyMsg}</div>`;
-    actionsEl.style.display = 'none';
+    resultsEl.innerHTML = `<div style="font-size:13.5px;color:var(--ink-soft);text-align:center;padding:24px 0;">${emptyMsg}</div>`;
+    if(actionsEl) actionsEl.style.display = 'none';
     return;
   }
 
   const buyerLbl = window.I18n ? window.I18n.t('find.buyer') : 'Buyer';
   const savedLbl = window.I18n ? window.I18n.t('find.saved') : 'Saved';
+  const countMsg = window.I18n && window.I18n.getLanguage() === 'ar'
+    ? `عرض ${buyerMatches.length} صفقة في قاعدة البيانات السحابية:`
+    : `Showing ${buyerMatches.length} deal(s) in cloud database:`;
 
-  actionsEl.style.display = 'flex';
-  resultsEl.innerHTML = buyerMatches.map((c, i) => {
-    const title = [c.year, c.make, c.model, c.trim].filter(Boolean).join(' ') || 'Vehicle deal';
-    return `
-    <div class="buyer-result">
-      <label style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;">
-        <input type="checkbox" class="buyer-check" data-idx="${i}" onchange="updateExportButton()">
-        <div>
-          <div class="buyer-title">${title}</div>
-          <div class="buyer-meta">${c.buyer_name ? buyerLbl + ': ' + c.buyer_name + ' · ' : ''}${c.vin ? 'VIN: ' + c.vin + ' · ' : ''}${savedLbl} ${new Date(c.created_at).toLocaleDateString()}</div>
+  if(actionsEl) actionsEl.style.display = 'flex';
+  resultsEl.innerHTML = `
+    <div style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:12px;">${countMsg}</div>
+    ${buyerMatches.map((c, i) => {
+      const title = [c.year, c.make, c.model, c.trim].filter(Boolean).join(' ') || 'Vehicle deal';
+      const firstPhoto = Array.isArray(c.photos) && c.photos.length ? (c.photos[0].url || c.photos[0].dataUrl) : null;
+      const priceText = c.purchase_price != null ? fmtMoney(c.purchase_price) : '';
+      const profitText = (c.sale_price != null && c.purchase_price != null) ? fmtMoney(c.sale_price - (c.purchase_price + (c.repair_cost || 0) + (c.other_costs || 0))) : '';
+
+      return `
+      <div class="buyer-result" style="display:flex;align-items:center;gap:14px;padding:12px 16px;">
+        <input type="checkbox" class="buyer-check" data-idx="${i}" onchange="updateExportButton()" style="cursor:pointer;width:18px;height:18px;">
+        ${firstPhoto ? `<img src="${firstPhoto}" alt="" style="width:52px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--line);">` : ''}
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span class="buyer-title">${title}</span>
+            <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--panel-subtle);border:1px solid var(--line);">${c.status || 'Owned'}</span>
+            ${priceText ? `<span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--accent-deep);">${priceText}</span>` : ''}
+          </div>
+          <div class="buyer-meta">
+            ${c.buyer_name ? buyerLbl + ': <b>' + c.buyer_name + '</b> · ' : ''}
+            ${c.vin ? 'VIN: <span style="font-family:\'JetBrains Mono\',monospace;">' + c.vin + '</span> · ' : ''}
+            ${savedLbl} ${new Date(c.created_at).toLocaleDateString()}
+          </div>
         </div>
-      </label>
-      <button class="btn-delete-deal" onclick="deleteCar('${c.id}')" aria-label="Delete deal" title="Delete from Supabase">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-      </button>
-    </div>
+        <button class="btn-delete-deal" onclick="deleteCar('${c.id}')" aria-label="Delete deal" title="Delete from Supabase">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+        </button>
+      </div>
+    `;
+    }).join('')}
   `;
-  }).join('');
   updateExportButton();
 }
 
@@ -2048,11 +2070,12 @@ async function initAdminAuth() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   buildVehicleGrid();
   buildOwnerGrid();
   initAdminAuth();
-  loadSavedCarsForCompare();
+  await loadSavedCarsForCompare();
+  searchByBuyer();
 
   // Listen for language changes to re-render dynamic tables and grids
   if (window.I18n) {
@@ -2060,6 +2083,7 @@ document.addEventListener('DOMContentLoaded', () => {
       buildVehicleGrid();
       buildOwnerGrid();
       renderPhotoGallery();
+      searchByBuyer();
       if (compareNewVehicle.VIN) {
         renderComparison();
       }
