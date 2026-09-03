@@ -812,7 +812,324 @@
   .print-section { font-size: 14px; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 4px; margin: 20px 0 10px; }
   .print-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 13px; }
   .print-photos { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-  .print-photos img { width: 140px; height: 100px; object-fit: cover; border-radius: 4px; }
+  /* Saved Deals & Inspector Modal Styles */
+  .saved-kpi-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .kpi-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+
+  .kpi-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .kpi-val {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+    font-family: 'JetBrains Mono', 'Plus Jakarta Sans', monospace;
+    line-height: 1.2;
+  }
+
+  .kpi-val.positive {
+    color: var(--good);
+  }
+
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+
+  .saved-deals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
+    margin-top: 16px;
+  }
+
+  .saved-deal-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+  }
+
+  .saved-deal-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-md);
+  }
+
+  .deal-card-header {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .deal-card-thumb {
+    width: 72px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background: var(--panel-subtle);
+    flex-shrink: 0;
+  }
+
+  .deal-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  .deal-card-badges {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .deal-metrics-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    background: var(--panel-subtle);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin: 12px 0;
+  }
+
+  .deal-metric-cell .label {
+    font-size: 11px;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+
+  .deal-metric-cell .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .btn-view-deal {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--panel-subtle);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 9px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-view-deal:hover {
+    background: var(--accent);
+    color: #0F172A;
+    border-color: var(--accent);
+  }
+
+  /* Deal Inspector Modal */
+  .deal-modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 15, 23, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .deal-modal-backdrop.open {
+    display: flex;
+  }
+
+  .deal-modal-card {
+    background: #FFFFFF;
+    color: #0F172A;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 860px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    animation: modalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .deal-modal-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid #E2E8F0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #F8FAFC;
+  }
+
+  .deal-modal-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0F172A;
+  }
+
+  .deal-modal-vin {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: #E2E8F0;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-close-modal {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    line-height: 1;
+    color: #64748B;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+
+  .btn-close-modal:hover {
+    color: #0F172A;
+    background: #E2E8F0;
+  }
+
+  .deal-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .modal-section-title {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #D97706;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .modal-grid-kv {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .kv-item .k {
+    font-size: 11px;
+    color: #64748B;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .kv-item .v {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+
+  .kv-item .v.mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .modal-note-box {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    color: #92400E;
+    line-height: 1.6;
+  }
+
+  .modal-photos-strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+
+  .modal-photos-strip img {
+    height: 110px;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+    object-fit: cover;
+  }
+
+  .deal-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #E2E8F0;
+    background: #F8FAFC;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
 </style>
 </head>
 <body>
@@ -882,6 +1199,10 @@
     <button class="tab-btn" data-tab="find" onclick="showTab('find')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       <span data-i18n="nav.tab_find">Find a Car</span>
+    </button>
+    <button class="tab-btn" data-tab="saved" onclick="showTab('saved')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+      <span data-i18n="nav.tab_saved">البيانات المحفوظة / Saved Deals</span>
     </button>
   </div>
 
@@ -1057,6 +1378,81 @@
 
   </div>
 
+  <!-- ===================== TAB 4: SAVED DEALS (البيانات المحفوظة / Saved Deals) ===================== -->
+  <div class="tab-panel" id="panel-saved">
+    
+    <!-- Top KPI Analytics Bar -->
+    <div class="saved-kpi-bar" id="savedKpiBar">
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="saved.kpi_total">Total Vehicles</div>
+        <div class="kpi-val" id="kpiTotalCars">0</div>
+        <div class="kpi-sub" id="kpiStatusBreakdown">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="saved.kpi_invested">Total Invested</div>
+        <div class="kpi-val" id="kpiTotalInvested">$0</div>
+        <div class="kpi-sub" data-i18n="saved.sec_financials">Financials & Deal Terms</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="saved.kpi_profit">Realized Profit</div>
+        <div class="kpi-val positive" id="kpiTotalProfit">$0</div>
+        <div class="kpi-sub" data-i18n="saved.sec_repairs">Reconditioning & Profit Margins</div>
+      </div>
+    </div>
+
+    <!-- Inventory Table / Grid Card -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+        <div>
+          <h2 class="card-title" data-i18n="saved.title">البيانات المحفوظة / Saved Deals</h2>
+          <p class="card-sub" data-i18n="saved.sub">Inspect and audit all deal records, specs, and financial margins stored in Supabase PostgreSQL.</p>
+        </div>
+        <button class="btn-primary" onclick="loadSavedCarsForCompare().then(renderSavedDeals)" style="padding:8px 16px;font-size:13px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          <span data-i18n="common.refresh">تحديث البيانات / Refresh</span>
+        </button>
+      </div>
+
+      <!-- Saved Deals Container -->
+      <div class="saved-deals-grid" id="savedDealsContainer">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Deal Inspector Modal -->
+<div id="dealModal" class="deal-modal-backdrop" onclick="if(event.target===this) closeDealModal()">
+  <div class="deal-modal-card" role="dialog" aria-modal="true">
+    <div class="deal-modal-header">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span class="deal-modal-title" id="m_title">Vehicle Details</span>
+        <span class="status-chip" id="m_status">Owned</span>
+        <span class="deal-modal-vin" id="m_vin"></span>
+      </div>
+      <button class="btn-close-modal" onclick="closeDealModal()" aria-label="Close modal">×</button>
+    </div>
+
+    <div class="deal-modal-body" id="m_body">
+      <!-- Injected via openDealModal() -->
+    </div>
+
+    <div class="deal-modal-footer">
+      <div style="font-size:11.5px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;" id="m_meta"></div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn-secondary" id="m_btnPrint" onclick="printSingleDeal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect width="12" height="8" x="6" y="14"></rect></svg>
+          <span data-i18n="saved.btn_print_this">Print Deal Sheet</span>
+        </button>
+        <button class="btn-primary btn-accent" id="m_btnCompare" onclick="compareFromModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"></path><path d="M8 21H3v-5"></path><path d="M21 3 9 15"></path><path d="m3 21 12-12"></path></svg>
+          <span data-i18n="saved.btn_compare_this">Load in Compare</span>
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="printArea"></div>
@@ -1071,6 +1467,9 @@ function showTab(name){
   if(btn) btn.classList.add('active');
   if(name === 'find') {
     searchByBuyer();
+  }
+  if(name === 'saved') {
+    renderSavedDeals();
   }
 }
 
@@ -1653,10 +2052,296 @@ let lastCompare = null;
 async function loadSavedCarsForCompare(){
   try {
     allSavedCars = await window.SupabaseAuth.fetchDealsFromCloud();
+    renderSavedDeals();
   } catch(e) {
     console.error('Error loading deals from Supabase:', e);
     allSavedCars = [];
   }
+}
+
+// ===================== SAVED DEALS & DETAIL INSPECTOR MODAL =====================
+let currentModalDeal = null;
+
+function renderSavedDeals(){
+  const container = document.getElementById('savedDealsContainer');
+  if(!container) return;
+
+  const deals = allSavedCars || [];
+  
+  // 1. Calculate KPIs
+  const totalCars = deals.length;
+  let totalInvested = 0;
+  let totalProfit = 0;
+  const statusCounts = {};
+
+  deals.forEach(d => {
+    const purchase = toNumber(d.purchase_price) || 0;
+    const repairs = toNumber(d.repair_cost) || 0;
+    const other = toNumber(d.other_costs) || 0;
+    const sale = toNumber(d.sale_price);
+    const invested = purchase + repairs + other;
+    totalInvested += invested;
+    if(sale != null) {
+      totalProfit += (sale - invested);
+    }
+    const st = d.status || 'Owned';
+    statusCounts[st] = (statusCounts[st] || 0) + 1;
+  });
+
+  const kpiCarsEl = document.getElementById('kpiTotalCars');
+  const kpiInvestedEl = document.getElementById('kpiTotalInvested');
+  const kpiProfitEl = document.getElementById('kpiTotalProfit');
+  const kpiStatusEl = document.getElementById('kpiStatusBreakdown');
+
+  if(kpiCarsEl) kpiCarsEl.textContent = totalCars;
+  if(kpiInvestedEl) kpiInvestedEl.textContent = fmtMoney(totalInvested);
+  if(kpiProfitEl) {
+    kpiProfitEl.textContent = (totalProfit >= 0 ? '+' : '') + fmtMoney(totalProfit);
+    kpiProfitEl.className = 'kpi-val ' + (totalProfit >= 0 ? 'positive' : 'negative');
+  }
+  if(kpiStatusEl) {
+    const statusArr = Object.entries(statusCounts).map(([s, c]) => `${s}: ${c}`);
+    kpiStatusEl.textContent = statusArr.length ? statusArr.join(' · ') : '—';
+  }
+
+  // 2. Render Cards
+  if(!deals.length){
+    const emptyMsg = window.I18n ? window.I18n.t('saved.empty') : 'No saved deals found in the cloud database yet.';
+    container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--ink-soft);font-size:14px;">${emptyMsg}</div>`;
+    return;
+  }
+
+  const viewBtnLbl = window.I18n ? window.I18n.t('saved.view_details') : 'عرض كامل البيانات / View Details';
+  const buyerLbl = window.I18n ? window.I18n.t('find.buyer') : 'Buyer';
+
+  container.innerHTML = deals.map(d => {
+    const title = [d.year, d.make, d.model, d.trim].filter(Boolean).join(' ') || 'Vehicle deal';
+    const firstPhoto = Array.isArray(d.photos) && d.photos.length ? (d.photos[0].url || d.photos[0].dataUrl) : null;
+    const purchase = toNumber(d.purchase_price);
+    const sale = toNumber(d.sale_price);
+    const repairs = (toNumber(d.repair_cost) || 0) + (toNumber(d.other_costs) || 0);
+    const invested = purchase != null ? purchase + repairs : null;
+    const netProfit = (sale != null && invested != null) ? sale - invested : null;
+
+    return `
+      <div class="saved-deal-card">
+        <div>
+          <div class="deal-card-header">
+            ${firstPhoto 
+              ? `<img src="${firstPhoto}" class="deal-card-thumb" alt="${title}">`
+              : `<div class="deal-card-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:11px;font-weight:700;">NO PHOTO</div>`
+            }
+            <div style="flex:1;min-width:0;">
+              <div class="deal-card-title">${title}</div>
+              <div class="deal-card-badges">
+                <span class="status-chip" style="font-size:11px;padding:2px 8px;border-radius:12px;background:var(--panel-subtle);border:1px solid var(--line);font-weight:700;">${d.status || 'Owned'}</span>
+                ${d.vin ? `<span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink-soft);background:var(--panel-subtle);padding:2px 6px;border-radius:4px;">${d.vin}</span>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <div class="deal-metrics-strip">
+            <div class="deal-metric-cell">
+              <div class="label">${window.I18n ? window.I18n.t('cmp.table_purchase') : 'Purchase'}</div>
+              <div class="val">${fmtMoney(purchase)}</div>
+            </div>
+            <div class="deal-metric-cell">
+              <div class="label">${window.I18n ? window.I18n.t('cmp.table_mileage') : 'Mileage'}</div>
+              <div class="val">${fmtNum(d.mileage)} mi</div>
+            </div>
+            <div class="deal-metric-cell">
+              <div class="label">${window.I18n ? window.I18n.t('cmp.table_invested') : 'Invested'}</div>
+              <div class="val">${fmtMoney(invested)}</div>
+            </div>
+            <div class="deal-metric-cell">
+              <div class="label">${window.I18n ? window.I18n.t('cmp.table_net_profit') : 'Net Profit'}</div>
+              <div class="val" style="color:${netProfit != null && netProfit >= 0 ? 'var(--good)' : (netProfit != null ? 'var(--danger)' : 'var(--ink-soft)')}">
+                ${netProfit != null ? (netProfit >= 0 ? '+' : '') + fmtMoney(netProfit) : '—'}
+              </div>
+            </div>
+          </div>
+
+          ${d.buyer_name ? `<div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">${buyerLbl}: <b>${d.buyer_name}</b> · ${new Date(d.created_at).toLocaleDateString()}</div>` : ''}
+        </div>
+
+        <button type="button" class="btn-view-deal" onclick="openDealModal('${d.id}')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>${viewBtnLbl}</span>
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function openDealModal(dealId){
+  const deal = (allSavedCars || []).find(d => d.id === dealId);
+  if(!deal) return;
+  currentModalDeal = deal;
+
+  const title = [deal.year, deal.make, deal.model, deal.trim].filter(Boolean).join(' ') || 'Vehicle Deal';
+  document.getElementById('m_title').textContent = title;
+  document.getElementById('m_status').textContent = deal.status || 'Owned';
+  document.getElementById('m_vin').textContent = deal.vin ? 'VIN: ' + deal.vin : '';
+  document.getElementById('m_meta').textContent = `${window.I18n ? window.I18n.t('saved.record_id') : 'Record ID'}: ${deal.id} · ${new Date(deal.created_at).toLocaleString()}`;
+
+  const purchase = toNumber(deal.purchase_price);
+  const sale = toNumber(deal.sale_price);
+  const repairCost = toNumber(deal.repair_cost) || 0;
+  const otherCosts = toNumber(deal.other_costs) || 0;
+  const invested = purchase != null ? purchase + repairCost + otherCosts : null;
+  const profit = (sale != null && invested != null) ? sale - invested : null;
+
+  const kv = (label, val, mono = false) => `
+    <div class="kv-item">
+      <div class="k">${label}</div>
+      <div class="v ${mono ? 'mono' : ''}">${val || '—'}</div>
+    </div>
+  `;
+
+  const customHtml = deal.custom_fields && Object.keys(deal.custom_fields).length
+    ? Object.entries(deal.custom_fields).map(([k, v]) => kv(k, v)).join('')
+    : '<div style="font-size:12px;color:#94A3B8;">None</div>';
+
+  const photosHtml = Array.isArray(deal.photos) && deal.photos.length
+    ? `<div class="modal-photos-strip">${deal.photos.map(p => `<img src="${p.url || p.dataUrl}" alt="${p.name || ''}" onclick="window.open(this.src,'_blank')">`).join('')}</div>`
+    : '';
+
+  const bodyEl = document.getElementById('m_body');
+  bodyEl.innerHTML = `
+    ${photosHtml}
+
+    <div>
+      <div class="modal-section-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h10M7 12h10M7 17h10"/></svg>
+        <span>${window.I18n ? window.I18n.t('saved.sec_specs') : 'Technical Specifications'}</span>
+      </div>
+      <div class="modal-grid-kv">
+        ${kv('VIN', deal.vin, true)}
+        ${kv('Year', deal.year)}
+        ${kv('Make', deal.make)}
+        ${kv('Model', deal.model)}
+        ${kv('Trim', deal.trim)}
+        ${kv('Engine', deal.engine)}
+        ${kv('Transmission', deal.transmission)}
+        ${kv('Body Type', deal.body_type)}
+        ${kv('Drive Type', deal.drive_type)}
+        ${kv('Fuel Type', deal.fuel_type)}
+        ${kv('Exterior Color', deal.exterior_color)}
+      </div>
+    </div>
+
+    <div>
+      <div class="modal-section-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+        <span>${window.I18n ? window.I18n.t('saved.sec_financials') : 'Financials & Deal Terms'}</span>
+      </div>
+      <div class="modal-grid-kv">
+        ${kv('Buyer Name', deal.buyer_name)}
+        ${kv('Status', deal.status)}
+        ${kv('Purchase Price', fmtMoney(purchase), true)}
+        ${kv('Mileage at Purchase', fmtNum(deal.mileage) + ' mi', true)}
+        ${kv('Purchase Date', deal.purchase_date || '—')}
+        ${kv('Purchase State', deal.purchase_state || '—')}
+        ${kv('Condition', deal.condition || '—')}
+        ${kv('Seller / Source', deal.seller || '—')}
+        ${kv('Location', deal.location || '—')}
+        ${kv('Title Status', deal.title_status || 'Clean')}
+      </div>
+    </div>
+
+    <div>
+      <div class="modal-section-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>${window.I18n ? window.I18n.t('saved.sec_repairs') : 'Reconditioning & Profit Margins'}</span>
+      </div>
+      <div class="modal-grid-kv">
+        ${kv('Repair Cost', fmtMoney(repairCost), true)}
+        ${kv('Other Costs (Transport/Fees)', fmtMoney(otherCosts), true)}
+        ${kv('Total Capital Invested', fmtMoney(invested), true)}
+        ${kv('Sale Information', deal.sale_info || '—')}
+        ${kv('Sale Price', fmtMoney(sale), true)}
+        ${kv('Realized Profit Margin', profit != null ? (profit >= 0 ? '+' : '') + fmtMoney(profit) : '—', true)}
+        ${kv('Deal Rating', deal.deal_rating ? '★'.repeat(deal.deal_rating) : '—')}
+      </div>
+      ${deal.repair_notes ? `<div class="modal-note-box" style="margin-top:10px;background:#F1F5F9;border-color:#CBD5E1;color:#334155;"><b>Repair Notes:</b> ${deal.repair_notes}</div>` : ''}
+    </div>
+
+    <div>
+      <div class="modal-section-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <span>${window.I18n ? window.I18n.t('saved.sec_insights') : 'Team Insights & Custom Attributes'}</span>
+      </div>
+      ${deal.lessons_learned ? `<div class="modal-note-box" style="margin-bottom:12px;"><b>What We Learned:</b> ${deal.lessons_learned}</div>` : ''}
+      ${deal.notes ? `<div class="modal-note-box" style="background:#F8FAFC;border-color:#E2E8F0;color:#334155;margin-bottom:12px;"><b>General Notes:</b> ${deal.notes}</div>` : ''}
+      <div class="modal-grid-kv">
+        ${customHtml}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('dealModal').classList.add('open');
+}
+
+function closeDealModal(){
+  document.getElementById('dealModal').classList.remove('open');
+  currentModalDeal = null;
+}
+
+function compareFromModal(){
+  if(!currentModalDeal) return;
+  closeDealModal();
+  showTab('compare');
+  const vinInput = document.getElementById('compareVinInput');
+  if(vinInput && currentModalDeal.vin) {
+    vinInput.value = currentModalDeal.vin;
+    decodeCompareVin();
+  }
+}
+
+function printSingleDeal(){
+  if(!currentModalDeal) return;
+  const title = [currentModalDeal.year, currentModalDeal.make, currentModalDeal.model, currentModalDeal.trim].filter(Boolean).join(' ') || 'Vehicle Deal';
+  
+  const rec = {
+    vehicle: {
+      'VIN': currentModalDeal.vin,
+      'Year': currentModalDeal.year,
+      'Make': currentModalDeal.make,
+      'Model': currentModalDeal.model,
+      'Trim': currentModalDeal.trim,
+      'Engine': currentModalDeal.engine,
+      'Transmission': currentModalDeal.transmission,
+      'Body type': currentModalDeal.body_type,
+      'Drive type': currentModalDeal.drive_type,
+      'Fuel type': currentModalDeal.fuel_type,
+      'Exterior color': currentModalDeal.exterior_color
+    },
+    records: {
+      'Status': currentModalDeal.status,
+      'Buyer': currentModalDeal.buyer_name,
+      'Purchase price': fmtMoney(currentModalDeal.purchase_price),
+      'Mileage at purchase': fmtNum(currentModalDeal.mileage) + ' mi',
+      'Purchase date': currentModalDeal.purchase_date,
+      'Condition': currentModalDeal.condition,
+      'Seller': currentModalDeal.seller,
+      'Location': currentModalDeal.location,
+      'Title status': currentModalDeal.title_status,
+      'Repair cost': fmtMoney(currentModalDeal.repair_cost),
+      'Other costs': fmtMoney(currentModalDeal.other_costs),
+      'Sale price': fmtMoney(currentModalDeal.sale_price),
+      'Deal rating': currentModalDeal.deal_rating ? currentModalDeal.deal_rating + '/5' : '—',
+      'What we learned': currentModalDeal.lessons_learned,
+      'Notes': currentModalDeal.notes
+    },
+    custom: currentModalDeal.custom_fields || {}
+  };
+
+  document.getElementById('printArea').innerHTML = buildPrintSections([{
+    title: title,
+    record: rec,
+    photos: currentModalDeal.photos || []
+  }]);
+  window.print();
 }
 
 function setCompareStatus(msg, kind){
@@ -2084,6 +2769,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       buildOwnerGrid();
       renderPhotoGallery();
       searchByBuyer();
+      renderSavedDeals();
       if (compareNewVehicle.VIN) {
         renderComparison();
       }

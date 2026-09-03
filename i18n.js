@@ -16,6 +16,25 @@ const I18N_DICTIONARY = {
     'nav.tab_compare': 'Compare Deals',
     'nav.tab_add': 'Add a Deal',
     'nav.tab_find': 'Find a Car',
+    'nav.tab_saved': 'البيانات المحفوظة / Saved Deals',
+
+    // Saved Deals Inspector
+    'saved.title': 'البيانات المحفوظة / Saved Deals',
+    'saved.sub': 'Inspect and audit all deal records, specs, and financial margins stored in Supabase PostgreSQL.',
+    'saved.kpi_total': 'Total Vehicles',
+    'saved.kpi_invested': 'Total Invested',
+    'saved.kpi_profit': 'Realized Profit',
+    'saved.kpi_status': 'Inventory Status',
+    'saved.view_details': 'عرض كامل البيانات / View Details',
+    'saved.empty': 'No saved deals found in the cloud database yet.',
+    'saved.modal_title': 'Vehicle Deal Inspector',
+    'saved.sec_specs': 'Technical Specifications',
+    'saved.sec_financials': 'Financials & Deal Terms',
+    'saved.sec_repairs': 'Reconditioning & Profit Margins',
+    'saved.sec_insights': 'Team Insights & Custom Attributes',
+    'saved.btn_compare_this': 'Load in Compare Deals',
+    'saved.btn_print_this': 'Print Official Deal Sheet',
+    'saved.record_id': 'Database Record ID',
 
     // Login Portal
     'login.badge': 'Dealership Admin Portal',
@@ -191,6 +210,25 @@ const I18N_DICTIONARY = {
     'nav.tab_compare': 'مقارنة الصفقات',
     'nav.tab_add': 'إضافة صفقة جديدة',
     'nav.tab_find': 'دليل السيارات',
+    'nav.tab_saved': 'البيانات المحفوظة / Saved Deals',
+
+    // Saved Deals Inspector
+    'saved.title': 'البيانات المحفوظة / Saved Deals',
+    'saved.sub': 'استعراض وتدقيق جميع سجلات الصفقات والمواصفات وهوامش الأرباح المخزنة في سحابة Supabase.',
+    'saved.kpi_total': 'إجمالي السيارات المسجلة',
+    'saved.kpi_invested': 'إجمالي رأس المال المستثمر',
+    'saved.kpi_profit': 'الأرباح المحققة',
+    'saved.kpi_status': 'توزيع حالات المخزون',
+    'saved.view_details': 'عرض كامل البيانات / View Details',
+    'saved.empty': 'لا توجد صفقات محفوظة في قاعدة البيانات السحابية حتى الآن.',
+    'saved.modal_title': 'فحص وتفاصيل سجل المركبة',
+    'saved.sec_specs': 'المواصفات الفنية للمركبة',
+    'saved.sec_financials': 'البيانات المالية وشروط الصفقة',
+    'saved.sec_repairs': 'الإصلاحات وهوامش الربح',
+    'saved.sec_insights': 'الدروس المستفادة والخصائص المخصصة',
+    'saved.btn_compare_this': 'تحميل السيارة في حاسبة المقارنة',
+    'saved.btn_print_this': 'طباعة تقرير الصفقة الرسمي',
+    'saved.record_id': 'معرف السجل في قاعدة البيانات',
 
     // Login Portal
     'login.badge': 'بوابة إدارة المعرض',
