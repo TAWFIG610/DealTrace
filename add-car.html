@@ -1448,21 +1448,21 @@ async function saveCar(){
 
     status: record.records['Status'] || 'Owned',
     buyer_name: record.records['Buyer'] || '',
-    purchase_price: toNumber(record.records['Purchase price']),
+    purchase_price: toNumber(record.records['Purchase price'], 99999999),
     purchase_state: record.records['Purchase state'] || '',
     purchase_date: record.records['Purchase date'] || null,
-    mileage: toNumber(record.records['Mileage at purchase']),
+    mileage: toNumber(record.records['Mileage at purchase'], 9999999),
     condition: record.records['Condition'] || '',
     seller: record.records['Seller'] || '',
     location: record.records['Location'] || '',
     title_status: record.records['Title status'] || 'Clean',
 
     repair_notes: record.records['Repair notes'] || '',
-    repair_cost: toNumber(record.records['Repair cost']) || 0,
-    other_costs: toNumber(record.records['Other costs']) || 0,
+    repair_cost: toNumber(record.records['Repair cost'], 99999999) || 0,
+    other_costs: toNumber(record.records['Other costs'], 99999999) || 0,
     sale_info: record.records['Sale information'] || '',
-    sale_price: toNumber(record.records['Sale price']),
-    deal_rating: toNumber(record.records['Deal rating']),
+    sale_price: toNumber(record.records['Sale price'], 99999999),
+    deal_rating: Math.min(Math.max(toNumber(record.records['Deal rating']) || 0, 1), 5) || null,
 
     lessons_learned: record.records['What we learned'] || '',
     notes: record.records['Notes'] || '',
@@ -1619,12 +1619,24 @@ function setCompareStatus(msg, kind){
   box.className = msg ? 'status-box show ' + kind : 'status-box';
 }
 
-function norm(s){ return (s || '').toString().trim().toLowerCase(); }
+function normalizeDigits(str) {
+  if (str === undefined || str === null) return '';
+  return String(str)
+    .replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632)
+    .replace(/[۰-۹]/g, d => d.charCodeAt(0) - 1776);
+}
 
-function toNumber(str){
+function toNumber(str, maxLimit = null){
   if(str === undefined || str === null || str === '') return null;
-  const n = parseFloat(String(str).replace(/[^0-9.\-]/g,''));
-  return isNaN(n) ? null : n;
+  const normalized = normalizeDigits(str);
+  const cleaned = normalized.replace(/[^0-9.\-]/g, '');
+  if(!cleaned) return null;
+  let n = parseFloat(cleaned);
+  if(isNaN(n)) return null;
+  if(maxLimit !== null && n > maxLimit){
+    n = maxLimit;
+  }
+  return n;
 }
 function fmtMoney(n){ return n == null ? '—' : '$' + Math.round(n).toLocaleString(); }
 function fmtNum(n){ return n == null ? '—' : Math.round(n).toLocaleString(); }

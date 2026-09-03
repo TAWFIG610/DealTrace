@@ -29,10 +29,10 @@ CREATE TABLE IF NOT EXISTS public.deals (
     -- Ownership & Deal details
     status VARCHAR(50) DEFAULT 'Owned',
     buyer_name VARCHAR(150),
-    purchase_price NUMERIC(12, 2),
+    purchase_price NUMERIC,
     purchase_state VARCHAR(50),
     purchase_date DATE,
-    mileage NUMERIC(10, 0),
+    mileage NUMERIC,
     condition VARCHAR(100),
     seller VARCHAR(150),
     location VARCHAR(150),
@@ -40,10 +40,10 @@ CREATE TABLE IF NOT EXISTS public.deals (
 
     -- Financials & Repairs
     repair_notes TEXT,
-    repair_cost NUMERIC(12, 2) DEFAULT 0,
-    other_costs NUMERIC(12, 2) DEFAULT 0,
+    repair_cost NUMERIC DEFAULT 0,
+    other_costs NUMERIC DEFAULT 0,
     sale_info VARCHAR(150),
-    sale_price NUMERIC(12, 2),
+    sale_price NUMERIC,
     deal_rating INTEGER CHECK (deal_rating BETWEEN 1 AND 5),
 
     -- Insights & Notes
