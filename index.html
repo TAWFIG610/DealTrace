@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DealTrace</title>
+  <title>DealTrace — Automotive Valuation Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
   <!-- Supabase JS SDK & Auth Layer -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-client.js"></script>
@@ -24,15 +26,16 @@
     }
     document.addEventListener('DOMContentLoaded', checkAuthAndRedirect);
   </script>
-  <!-- Immediate fallback if JavaScript is delayed -->
   <noscript>
     <meta http-equiv="refresh" content="0; url=login.html">
   </noscript>
   <style>
+    * { box-sizing: border-box; }
     body {
-      background: #F5F2EA;
-      color: #5B564C;
-      font-family: 'Public Sans', system-ui, -apple-system, sans-serif;
+      background-color: #0B0F17;
+      background-image: radial-gradient(circle at 50% 30%, rgba(245, 158, 11, 0.08) 0%, transparent 60%);
+      color: #94A3B8;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
       height: 100vh;
       margin: 0;
       display: flex;
@@ -40,26 +43,53 @@
       align-items: center;
       justify-content: center;
     }
+    .splash-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      animation: fadeIn 0.4s ease-out;
+    }
+    .logo-img {
+      height: 52px;
+      width: auto;
+    }
+    .loader-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
     .spinner {
-      width: 28px;
-      height: 28px;
-      border: 3px solid rgba(166, 116, 44, 0.2);
-      border-top-color: #A6742C;
+      width: 22px;
+      height: 22px;
+      border: 2px solid rgba(245, 158, 11, 0.2);
+      border-top-color: #F59E0B;
       border-radius: 50%;
-      animation: spin 0.8s ease-in-out infinite;
-      margin-bottom: 14px;
+      animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     }
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    p {
-      font-size: 14px;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.97); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .status-text {
+      font-size: 13.5px;
       font-weight: 500;
+      color: #64748B;
+      letter-spacing: 0.02em;
     }
   </style>
 </head>
 <body>
-  <div class="spinner"></div>
-  <p>Loading DealTrace…</p>
+  <div class="splash-card">
+    <img src="assets/logo-dark.svg" alt="DealTrace" class="logo-img">
+    <div class="loader-wrap">
+      <div class="spinner"></div>
+      <span class="status-text">Initializing workspace…</span>
+    </div>
+  </div>
 </body>
 </html>

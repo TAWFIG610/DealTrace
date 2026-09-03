@@ -3,446 +3,937 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vehicle deals</title>
+<title>DealTrace — Automotive Valuation & Deal Comparison</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 <!-- Supabase JS SDK & Auth Layer -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-client.js"></script>
 <style>
-  :root{
-    --paper:#F5F2EA;
-    --panel:#FFFFFF;
-    --ink:#211C15;
-    --ink-soft:#5B564C;
-    --ink-faint:#928C7E;
-    --line:#DDD6C4;
-    --line-strong:#C7BEA6;
-    --brass:#A6742C;
-    --brass-deep:#7C5620;
-    --brass-tint:#F3E7CF;
-    --steel:#435364;
-    --steel-tint:#E7ECEF;
-    --danger:#A3392F;
-    --danger-tint:#F7E4E1;
-    --good:#3E5C33;
-    --good-tint:#EAF1E4;
-    --radius:10px;
+  :root {
+    --bg-page: #F8FAFC;
+    --panel: #FFFFFF;
+    --panel-subtle: #F1F5F9;
+    --ink: #0F172A;
+    --ink-secondary: #334155;
+    --ink-soft: #64748B;
+    --ink-faint: #94A3B8;
+    --line: #E2E8F0;
+    --line-strong: #CBD5E1;
+    --accent: #D97706;
+    --accent-light: #F59E0B;
+    --accent-tint: #FEF3C7;
+    --accent-deep: #B45309;
+    --primary: #0F172A;
+    --primary-hover: #1E293B;
+    --danger: #DC2626;
+    --danger-tint: #FEE2E2;
+    --good: #16A34A;
+    --good-tint: #DCFCE7;
+    --radius-lg: 14px;
+    --radius-md: 10px;
+    --radius-sm: 6px;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
   }
-  *{box-sizing:border-box;}
-  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Public Sans',sans-serif;}
-  .wrap{max-width:820px;margin:0 auto;padding:40px 28px 80px;}
 
-  .admin-bar {
-    display: none;
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-page);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Top Navigation Bar */
+  .top-nav {
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .nav-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 12px 24px;
+    display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 10px 16px;
-    margin-bottom: 24px;
-    font-size: 13px;
+    gap: 16px;
   }
+
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .nav-logo {
+    height: 38px;
+    width: auto;
+    display: block;
+  }
+
+  .sync-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--panel-subtle);
+    border: 1px solid var(--line);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .sync-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--good);
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+    animation: pulseSync 2.5s infinite;
+  }
+
+  @keyframes pulseSync {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.15); }
+  }
+
   .admin-bar-user {
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: var(--ink-soft);
+    gap: 12px;
   }
-  .admin-pill {
-    background: var(--good-tint);
-    color: var(--good);
+
+  .admin-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel-subtle);
+    border: 1px solid var(--line);
+    padding: 4px 10px 4px 6px;
+    border-radius: 24px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--ink-secondary);
+  }
+
+  .admin-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 11px;
     font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 12px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    border: 1px solid rgba(62, 92, 51, 0.2);
   }
+
   .btn-signout {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     background: transparent;
     border: 1px solid var(--line-strong);
     color: var(--ink-soft);
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12.5px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.15s ease;
   }
+
   .btn-signout:hover {
     background: var(--danger-tint);
-    color: var(--danger);
     border-color: var(--danger);
+    color: var(--danger);
   }
 
-  h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;margin:0 0 4px;letter-spacing:-0.01em;}
-  .sub{color:var(--ink-soft);font-size:14.5px;margin:0 0 24px;}
-
-  .tabs{display:flex;gap:22px;margin-bottom:28px;border-bottom:1.5px solid var(--line);}
-  .tab-btn{
-    font-family:'Public Sans',sans-serif;font-weight:600;font-size:14.5px;
-    padding:10px 2px;border:none;background:transparent;color:var(--ink-faint);
-    cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;
-  }
-  .tab-btn.active{color:var(--ink);border-bottom-color:var(--brass);}
-  .tab-btn:hover{color:var(--ink);}
-  .tab-panel{display:none;}
-  .tab-panel.active{display:block;}
-
-  .plate{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    padding:20px 22px;
-    margin-bottom:28px;
-  }
-  .plate-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);margin:0 0 10px;font-weight:600;}
-  .plate-row{display:flex;gap:10px;}
-  .plate-row input{
-    flex:1;
-    font-family:'JetBrains Mono',monospace;
-    font-size:16px;
-    font-weight:600;
-    letter-spacing:.06em;
-    padding:12px 14px;
-    border:1.5px solid var(--line-strong);
-    border-radius:8px;
-    background:var(--paper);
-    color:var(--ink);
-    text-transform:uppercase;
-  }
-  .plate-row input:focus{outline:none;border-color:var(--brass);background:var(--panel);}
-  .plate-row input::placeholder{color:var(--ink-faint);font-weight:500;letter-spacing:.03em;text-transform:none;}
-  .btn-fill{
-    font-family:'Public Sans',sans-serif;
-    font-weight:600;
-    font-size:14px;
-    padding:0 20px;
-    border:none;
-    border-radius:8px;
-    background:var(--brass);
-    color:#fff;
-    cursor:pointer;
-    white-space:nowrap;
-  }
-  .btn-fill:hover{background:var(--brass-deep);}
-  .btn-fill:disabled{background:var(--ink-faint);cursor:default;}
-  .plate-alt{margin-top:12px;font-size:13px;color:var(--ink-soft);}
-  .plate-alt a{color:var(--steel);cursor:pointer;text-decoration:underline;}
-  .status{font-size:13px;margin-top:10px;padding:8px 12px;border-radius:6px;display:none;}
-  .status.show{display:block;}
-  .status.ok{background:var(--good-tint);color:var(--good);}
-  .status.err{background:var(--danger-tint);color:var(--danger);}
-  .status.loading{background:var(--steel-tint);color:var(--steel);}
-
-  .section-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;margin:0 0 3px;}
-  .section-note{font-size:13px;color:var(--ink-faint);margin:0 0 14px;}
-
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin-bottom:24px;}
-
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;}
-  @media (max-width:520px){.grid{grid-template-columns:1fr;}}
-
-  .field{display:flex;flex-direction:column;gap:5px;}
-  .field-label-row{display:flex;align-items:center;justify-content:space-between;}
-  .field label{font-size:12.5px;font-weight:600;color:var(--ink-soft);}
-  .badge-auto{font-size:10px;font-weight:600;letter-spacing:.03em;color:var(--brass-deep);background:var(--brass-tint);padding:2px 7px;border-radius:20px;}
-  .field input, .field select, .field textarea{
-    font-family:'Public Sans',sans-serif;
-    font-size:14.5px;
-    padding:9px 11px;
-    border:1px solid var(--line-strong);
-    border-radius:7px;
-    background:var(--paper);
-    color:var(--ink);
-    width:100%;
-  }
-  .field input:focus, .field select:focus, .field textarea:focus{outline:none;border-color:var(--steel);background:var(--panel);}
-  .field textarea{resize:vertical;min-height:64px;font-family:'Public Sans',sans-serif;}
-  .field-full{grid-column:1/-1;}
-
-  .custom-row{display:flex;gap:10px;align-items:flex-end;margin-bottom:10px;}
-  .custom-row .field{flex:1;}
-  .remove-btn{
-    border:1px solid var(--line-strong);background:var(--panel);color:var(--danger);
-    width:36px;height:36px;border-radius:7px;cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;
-  }
-  .remove-btn:hover{background:var(--danger-tint);border-color:var(--danger);}
-  .add-field-btn{
-    border:1px dashed var(--line-strong);background:transparent;color:var(--ink-soft);
-    padding:10px 14px;border-radius:7px;font-size:13.5px;font-weight:600;cursor:pointer;width:100%;
-  }
-  .add-field-btn:hover{border-color:var(--brass);color:var(--brass-deep);background:var(--brass-tint);}
-
-  .save-row{display:flex;gap:12px;margin-top:8px;}
-  .btn-save{
-    flex:1;font-family:'Public Sans',sans-serif;font-weight:600;font-size:15px;
-    padding:13px;border:none;border-radius:8px;background:var(--ink);color:#fff;cursor:pointer;
-  }
-  .btn-save:hover{background:#3a352a;}
-  .saved-note{font-size:13px;color:var(--ink-faint);margin-top:10px;text-align:center;display:none;}
-  .saved-note.show{display:block;}
-
-  .photo-drop{
-    border:1.5px dashed var(--line-strong);
-    border-radius:var(--radius);
-    padding:26px 20px;
-    text-align:center;
-    cursor:pointer;
-    color:var(--ink-soft);
-    font-size:13.5px;
-    transition:border-color .15s, background .15s;
-  }
-  .photo-drop:hover, .photo-drop.drag{border-color:var(--brass);background:var(--brass-tint);color:var(--brass-deep);}
-  .photo-drop strong{color:var(--ink);}
-  .photo-drop.drag strong{color:var(--brass-deep);}
-  .photo-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin-top:14px;}
-  .photo-thumb{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--line);aspect-ratio:1;background:var(--paper);}
-  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-  .photo-thumb .cover-tag{position:absolute;bottom:0;left:0;right:0;font-size:10px;font-weight:600;letter-spacing:.03em;text-align:center;padding:3px 0;background:rgba(33,28,21,.72);color:#fff;}
-  .photo-thumb .photo-remove{
-    position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;
-    border:none;background:rgba(33,28,21,.72);color:#fff;font-size:13px;line-height:1;cursor:pointer;
-  }
-  .photo-thumb .photo-remove:hover{background:var(--danger);}
-  .photo-thumb:not(.is-cover):hover .make-cover{display:block;}
-  .make-cover{
-    position:absolute;top:4px;left:4px;display:none;
-    font-size:9.5px;font-weight:600;padding:3px 6px;border-radius:5px;border:none;
-    background:rgba(255,255,255,.9);color:var(--ink);cursor:pointer;
+  /* Main Container */
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
   }
 
-  .btn-secondary{background:var(--panel);color:var(--ink);border:1.5px solid var(--line-strong);}
-  .btn-secondary:hover{background:var(--steel-tint);border-color:var(--steel);}
-
-  #printArea{display:none;}
-  @media print{
-    @page{size:auto;margin:14mm 12mm;}
-    html, body{height:auto;margin:0;}
-    .wrap{display:none !important;}
-    #printArea{display:block !important;width:100%;padding:0;}
-    .print-page{page-break-after:always;page-break-inside:avoid;}
-    .print-page:last-child{page-break-after:auto;}
-    .print-title{font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin:0 0 3px;}
-    .print-sub{color:#666;font-size:10.5px;margin:0 0 12px;}
-    .print-section{font-family:'Fraunces',serif;font-size:13px;font-weight:600;margin:12px 0 5px;border-bottom:1px solid #ccc;padding-bottom:3px;page-break-after:avoid;}
-    .print-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid #eee;page-break-inside:avoid;}
-    .print-row span:first-child{color:#666;}
-    .print-photos{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
-    .print-photos img{width:80px;height:80px;object-fit:cover;border-radius:4px;}
+  /* Header Section */
+  .page-header {
+    margin-bottom: 28px;
   }
 
-  .search-row{display:flex;gap:10px;}
-  .search-row input{flex:1;}
-  .buyer-results{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
-  .buyer-result{
-    display:flex;align-items:center;gap:12px;padding:12px 14px;
-    border:1px solid var(--line);border-radius:8px;background:var(--paper);
+  .page-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0 0 6px;
   }
-  .buyer-result input[type="checkbox"]{width:16px;height:16px;flex-shrink:0;accent-color:var(--brass);}
-  .buyer-result .br-info{flex:1;}
-  .buyer-result .br-title{font-weight:600;font-size:14.5px;}
-  .buyer-result .br-meta{font-size:12.5px;color:var(--ink-faint);margin-top:2px;}
-  .buyer-empty{font-size:13.5px;color:var(--ink-faint);text-align:center;padding:14px 0;}
-  .buyer-delete{
-    border:1px solid var(--line-strong);background:var(--panel);color:var(--danger);
-    width:32px;height:32px;border-radius:7px;cursor:pointer;font-size:15px;line-height:1;flex-shrink:0;
-  }
-  .buyer-delete:hover{background:var(--danger-tint);border-color:var(--danger);}
-  .buyer-actions{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;}
-  .select-all{font-size:13px;color:var(--steel);cursor:pointer;text-decoration:underline;}
-  .btn-export-selected{
-    font-family:'Public Sans',sans-serif;font-weight:600;font-size:13.5px;
-    padding:9px 16px;border:none;border-radius:7px;background:var(--ink);color:#fff;cursor:pointer;
-  }
-  .btn-export-selected:disabled{background:var(--ink-faint);cursor:default;}
-  .storage-note{font-size:12px;color:var(--ink-faint);margin-top:10px;}
 
-  .compare-vin-row{display:flex;gap:8px;margin-bottom:10px;}
-  .compare-vin-row input{
-    flex:1;font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:600;letter-spacing:.04em;
-    padding:9px 11px;border:1px solid var(--line-strong);border-radius:7px;background:var(--paper);color:var(--ink);text-transform:uppercase;
+  .page-sub {
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    margin: 0;
+    line-height: 1.5;
   }
-  .compare-mini-btn{
-    font-family:'Public Sans',sans-serif;font-weight:600;font-size:12.5px;padding:0 14px;
-    border:none;border-radius:7px;background:var(--brass);color:#fff;cursor:pointer;white-space:nowrap;
+
+  /* Segmented Tab Navigation */
+  .tabs-nav {
+    display: flex;
+    background: var(--panel-subtle);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 28px;
+    width: fit-content;
   }
-  .compare-mini-btn:hover{background:var(--brass-deep);}
-  .compare-mini-btn:disabled{background:var(--ink-faint);}
-  .btn-compare{
-    width:100%;margin-top:16px;font-family:'Public Sans',sans-serif;font-weight:600;font-size:14.5px;
-    padding:12px;border:none;border-radius:8px;background:var(--ink);color:#fff;cursor:pointer;
+
+  .tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13.5px;
+    padding: 8px 18px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .btn-compare:hover{background:#3a352a;}
-  .compare-status{font-size:13px;margin-top:8px;padding:8px 12px;border-radius:6px;display:none;}
-  .compare-status.show{display:block;}
 
-  .spec-line{display:flex;justify-content:space-between;font-size:13.5px;padding:7px 0;border-bottom:1px solid var(--line);}
-  .spec-line:last-child{border-bottom:none;}
-  .spec-line .k{color:var(--ink-soft);}
-  .spec-line .v{font-weight:600;}
-  .spec-line.total{margin-top:2px;padding-top:10px;border-top:1.5px solid var(--line-strong);}
-  .spec-line.total .k{font-weight:600;color:var(--ink);}
-  .spec-line.total .v{color:var(--brass-deep);font-size:16px;}
-
-  .cmp-table{margin-top:20px;border:1px solid var(--line);border-radius:10px;overflow-x:auto;}
-  .cmp-row{display:grid;}
-  .cmp-row + .cmp-row{border-top:1px solid var(--line);}
-  .cmp-row.head{background:var(--brass-tint);font-weight:600;}
-  .cmp-cell{padding:9px 10px;font-size:12.5px;white-space:nowrap;}
-  .cmp-cell.attr{color:var(--ink-soft);font-weight:600;background:var(--paper);}
-  .cmp-cell.current{background:#FBF6EA;}
-  .cmp-good{color:var(--good);font-weight:700;}
-  .cmp-bad{color:var(--danger);font-weight:700;}
-
-  .summary-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin-top:20px;}
-  .summary-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:4px 11px;border-radius:20px;margin-bottom:12px;}
-  .summary-badge.good{background:var(--good-tint);color:var(--good);}
-  .summary-badge.mixed{background:var(--brass-tint);color:var(--brass-deep);}
-  .summary-badge.poor{background:var(--danger-tint);color:var(--danger);}
-  .summary-badge.none{background:var(--steel-tint);color:var(--steel);}
-  .summary-stats{margin:8px 0;font-size:13.5px;line-height:1.6;color:var(--ink-soft);}
-  .summary-line{font-size:14.5px;font-weight:600;margin-top:12px;color:var(--ink);}
-
-  .lessons-card{margin-top:16px;}
-  .lesson-item{padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;line-height:1.5;}
-  .lesson-item:last-child{border-bottom:none;}
-  .lesson-item b{color:var(--brass-deep);}
-
-  pre.output{
-    background:#1E1B15;color:#EDE8DA;border-radius:8px;padding:16px;font-size:12.5px;
-    font-family:'JetBrains Mono',monospace;overflow-x:auto;white-space:pre-wrap;word-break:break-word;
-    display:none;margin-top:16px;
+  .tab-btn svg { width: 16px; height: 16px; }
+  .tab-btn:hover { color: var(--ink); }
+  .tab-btn.active {
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: var(--shadow-sm);
   }
-  pre.output.show{display:block;}
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; animation: fadeIn 0.2s ease-out; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Cards */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .card-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 4px;
+  }
+
+  .card-sub {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0 0 18px;
+  }
+
+  /* Form Elements & Inputs */
+  .input-search-wrap {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .input-search-wrap input {
+    flex: 1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 12px 16px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: var(--radius-md);
+    background: var(--panel);
+    color: var(--ink);
+    text-transform: uppercase;
+    transition: all 0.15s ease;
+  }
+
+  .input-search-wrap input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-tint);
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 12px 22px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+
+  .btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:disabled {
+    background: var(--ink-faint);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-accent {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-accent:hover {
+    background: var(--accent-deep);
+  }
+
+  .btn-secondary {
+    background: var(--panel-subtle);
+    border: 1px solid var(--line-strong);
+    color: var(--ink-secondary);
+  }
+
+  .btn-secondary:hover {
+    background: #E2E8F0;
+  }
+
+  /* Status Notices */
+  .status-box {
+    font-size: 13.5px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    margin-top: 10px;
+    display: none;
+    line-height: 1.4;
+  }
+
+  .status-box.show { display: block; }
+  .status-box.ok { background: var(--good-tint); color: var(--good); border: 1px solid rgba(22, 163, 74, 0.2); }
+  .status-box.err { background: var(--danger-tint); color: var(--danger); border: 1px solid rgba(220, 38, 38, 0.2); }
+  .status-box.loading { background: var(--panel-subtle); color: var(--ink-secondary); border: 1px solid var(--line); }
+
+  /* Bento Grid for Fields */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 768px) {
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .field label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-secondary);
+  }
+
+  .field input, .field select, .field textarea {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 10px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    width: 100%;
+    transition: all 0.15s ease;
+  }
+
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-tint);
+  }
+
+  .badge-auto {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--accent-deep);
+    background: var(--accent-tint);
+    padding: 2px 7px;
+    border-radius: 12px;
+    letter-spacing: 0.02em;
+  }
+
+  /* Metric Highlight Tiles */
+  .metric-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  @media (max-width: 720px) {
+    .metric-tiles { grid-template-columns: 1fr 1fr; }
+  }
+
+  .metric-tile {
+    background: var(--panel-subtle);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .metric-tile.highlight {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.08) 0%, rgba(245, 158, 11, 0.03) 100%);
+    border-color: rgba(217, 119, 6, 0.3);
+  }
+
+  .metric-tile-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    margin: 0 0 6px;
+  }
+
+  .metric-tile-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .metric-tile.highlight .metric-tile-value {
+    color: var(--accent-deep);
+  }
+
+  /* Comparison Matrix Table */
+  .cmp-wrapper {
+    margin-top: 24px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow-x: auto;
+    background: var(--panel);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .cmp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 600px;
+  }
+
+  .cmp-table th, .cmp-table td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .cmp-table th {
+    background: var(--panel-subtle);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .cmp-table th.col-current, .cmp-table td.col-current {
+    background: rgba(217, 119, 6, 0.05);
+    border-left: 2px solid var(--accent);
+    border-right: 1px solid var(--line);
+    font-weight: 600;
+  }
+
+  .cmp-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .cmp-good { color: var(--good); font-weight: 700; }
+  .cmp-bad { color: var(--danger); font-weight: 700; }
+
+  .delta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 12px;
+    margin-left: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .delta-pill.good { background: var(--good-tint); color: var(--good); }
+  .delta-pill.bad { background: var(--danger-tint); color: var(--danger); }
+
+  /* Summary Card */
+  .summary-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    background: var(--panel);
+    margin-top: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .summary-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+
+  .summary-badge.good { background: var(--good-tint); color: var(--good); border: 1px solid rgba(22, 163, 74, 0.2); }
+  .summary-badge.mixed { background: var(--accent-tint); color: var(--accent-deep); border: 1px solid rgba(217, 119, 6, 0.2); }
+  .summary-badge.poor { background: var(--danger-tint); color: var(--danger); border: 1px solid rgba(220, 38, 38, 0.2); }
+  .summary-badge.none { background: var(--panel-subtle); color: var(--ink-soft); border: 1px solid var(--line); }
+
+  .summary-lead {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 10px;
+    line-height: 1.5;
+  }
+
+  .summary-stats-p {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin: 4px 0;
+    line-height: 1.6;
+  }
+
+  /* Photo Upload Dropzone */
+  .photo-drop {
+    border: 2px dashed var(--line-strong);
+    border-radius: var(--radius-md);
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--ink-soft);
+    background: var(--panel-subtle);
+    transition: all 0.18s ease;
+  }
+
+  .photo-drop:hover, .photo-drop.drag {
+    border-color: var(--accent);
+    background: var(--accent-tint);
+    color: var(--accent-deep);
+  }
+
+  .photo-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .photo-thumb {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    border: 1px solid var(--line);
+    background: #000;
+  }
+
+  .photo-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .cover-tag {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  .make-cover {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    background: rgba(15, 23, 42, 0.75);
+    color: #fff;
+    border: none;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 3px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .photo-remove {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: rgba(220, 38, 38, 0.85);
+    color: #fff;
+    border: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Buyer Results Cards */
+  .buyer-result {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+    transition: border-color 0.15s ease;
+  }
+
+  .buyer-result:hover {
+    border-color: var(--line-strong);
+  }
+
+  .buyer-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--ink);
+  }
+
+  .buyer-meta {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 3px;
+  }
+
+  .btn-delete-deal {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    padding: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+
+  .btn-delete-deal:hover {
+    background: var(--danger-tint);
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  /* Print Styles */
+  @media print {
+    body { background: #fff; }
+    .top-nav, .tabs-nav, .input-search-wrap, button { display: none !important; }
+    .wrap { max-width: 100%; padding: 0; }
+    #printArea { display: block !important; }
+  }
+
+  #printArea { display: none; }
+  .print-page { padding: 40px; }
+  .print-title { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+  .print-sub { font-size: 13px; color: #666; margin-bottom: 24px; }
+  .print-section { font-size: 14px; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 4px; margin: 20px 0 10px; }
+  .print-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 13px; }
+  .print-photos { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .print-photos img { width: 140px; height: 100px; object-fit: cover; border-radius: 4px; }
 </style>
 </head>
 <body>
+
+<!-- Global Sticky Navigation -->
+<header class="top-nav">
+  <div class="nav-inner">
+    <div class="brand-group">
+      <img src="assets/logo.svg" alt="DealTrace" class="nav-logo">
+      <div class="sync-badge">
+        <span class="sync-dot"></span>
+        <span>Cloud Synced</span>
+      </div>
+    </div>
+
+    <!-- Admin Status Bar -->
+    <div id="adminBar" class="admin-bar-user" style="display: none;">
+      <div class="admin-chip">
+        <div class="admin-avatar" id="adminInitial">A</div>
+        <span id="adminEmailLabel">Loading…</span>
+      </div>
+      <button type="button" class="btn-signout" onclick="window.SupabaseAuth.signOutAdmin()" title="Sign Out">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <span>Sign Out</span>
+      </button>
+    </div>
+  </div>
+</header>
+
 <div class="wrap">
-  <div id="adminBar" class="admin-bar">
-    <div class="admin-bar-user">
-      <span class="admin-pill">Admin</span>
-      <span id="adminEmailLabel">Loading...</span>
-    </div>
-    <button type="button" class="btn-signout" onclick="window.SupabaseAuth.signOutAdmin()">Sign Out</button>
+  
+  <div class="page-header">
+    <h1 class="page-title">Deal Intelligence Workspace</h1>
+    <p class="page-sub">Evaluate prospective inventory against your dealership's historical transactions, repair data, and profit margins.</p>
   </div>
 
-  <h1>Vehicle deals</h1>
-  <p class="sub">Compare a car you're considering against deals we've made before — or add a new deal to build that history.</p>
-
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="compare" onclick="showTab('compare')">Compare</button>
-    <button class="tab-btn" data-tab="add" onclick="showTab('add')">Add a deal</button>
-    <button class="tab-btn" data-tab="find" onclick="showTab('find')">Find a car</button>
+  <!-- Tab Switcher -->
+  <div class="tabs-nav">
+    <button class="tab-btn active" data-tab="compare" onclick="showTab('compare')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"></path><path d="M8 21H3v-5"></path><path d="M21 3 9 15"></path><path d="m3 21 12-12"></path></svg>
+      <span>Compare Deals</span>
+    </button>
+    <button class="tab-btn" data-tab="add" onclick="showTab('add')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+      <span>Add a Deal</span>
+    </button>
+    <button class="tab-btn" data-tab="find" onclick="showTab('find')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <span>Find a Car</span>
+    </button>
   </div>
 
-  <!-- ===================== COMPARE (main feature) ===================== -->
+  <!-- ===================== TAB 1: COMPARE DEALS ===================== -->
   <div class="tab-panel active" id="panel-compare">
+    
     <div class="card">
-      <p class="plate-label">Car you're considering</p>
-      <div class="compare-vin-row">
-        <input type="text" id="compareVinInput" placeholder="Paste VIN" maxlength="17">
-        <button class="compare-mini-btn" id="compareVinBtn" onclick="decodeCompareVin()">Decode</button>
-      </div>
-      <div class="compare-status" id="compareStatus"></div>
-      <div class="grid" style="margin-top:14px;">
-        <div class="field"><label>Asking / purchase price</label><input type="text" id="compareNewPrice" placeholder="$0"></div>
-        <div class="field"><label>Mileage</label><input type="text" id="compareNewMileage" placeholder="e.g. 71,000"></div>
-        <div class="field"><label>Estimated repairs</label><input type="text" id="compareNewRepairCost" placeholder="$0"></div>
-        <div class="field"><label>Other estimated costs</label><input type="text" id="compareNewOtherCosts" placeholder="$0"></div>
-      </div>
-      <button class="btn-compare" onclick="renderComparison()">Compare against our past deals</button>
-      <button class="btn-save btn-secondary" style="margin-top:10px;width:100%;" onclick="exportComparePdf()">Export comparison to PDF</button>
-    </div>
+      <h2 class="card-title">Vehicle Valuation & Comparison</h2>
+      <p class="card-sub">Paste the 17-character VIN to auto-decode factory specs and instantly compare against all past purchases of that model.</p>
 
-    <div id="compareCurrentCard"></div>
-    <div id="compareTable"></div>
-    <div id="compareSummary"></div>
-    <div id="compareLessons"></div>
-  </div>
-
-  <!-- ===================== ADD A DEAL ===================== -->
-  <div class="tab-panel" id="panel-add">
-    <div class="plate">
-      <p class="plate-label">Vehicle identification</p>
-      <div class="plate-row">
-        <input type="text" id="vinInput" placeholder="Enter 17-character VIN" maxlength="17">
-        <button class="btn-fill" id="fillBtn" onclick="decodeVin()">Auto fill</button>
+      <div class="input-search-wrap">
+        <input type="text" id="compareVinInput" placeholder="ENTER 17-DIGIT VIN..." maxlength="17" onkeydown="if(event.key==='Enter') decodeCompareVin()">
+        <button class="btn-primary btn-accent" id="compareVinBtn" onclick="decodeCompareVin()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span>Decode & Search</span>
+        </button>
       </div>
-      <p class="plate-alt">No VIN handy? <a onclick="toggleManualLookup()">Describe the vehicle instead</a></p>
-      <div id="manualLookup" style="display:none;margin-top:10px;">
-        <div class="plate-row">
-          <input type="text" id="descInput" placeholder="e.g. 2020 Honda Accord Sport 2.0T" style="text-transform:none;font-weight:500;font-size:14.5px;">
-          <button class="btn-fill" onclick="decodeDescription()">Look up</button>
+
+      <div class="status-box" id="compareStatus"></div>
+
+      <div class="grid-4" style="margin-top: 18px;">
+        <div class="field">
+          <label>Asking / Purchase Price</label>
+          <input type="text" id="compareNewPrice" placeholder="$0" oninput="renderComparison()">
+        </div>
+        <div class="field">
+          <label>Mileage (Odometer)</label>
+          <input type="text" id="compareNewMileage" placeholder="e.g. 65,000" oninput="renderComparison()">
+        </div>
+        <div class="field">
+          <label>Estimated Repairs</label>
+          <input type="text" id="compareNewRepairCost" placeholder="$0" oninput="renderComparison()">
+        </div>
+        <div class="field">
+          <label>Other Costs (Transport/Fees)</label>
+          <input type="text" id="compareNewOtherCosts" placeholder="$0" oninput="renderComparison()">
         </div>
       </div>
-      <div class="status" id="statusBox"></div>
+
+      <div style="display:flex;gap:12px;margin-top:20px;">
+        <button class="btn-primary" style="flex:1;" onclick="renderComparison()">
+          <span>Run Comparison</span>
+        </button>
+        <button class="btn-primary btn-secondary" onclick="exportComparePdf()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span>Export PDF</span>
+        </button>
+      </div>
     </div>
 
-    <p class="section-title">Photos</p>
-    <p class="section-note">Add a few shots — the first one you add is the cover photo unless you set another.</p>
+    <!-- Live Telemetry Card -->
+    <div id="compareCurrentCard"></div>
+    <!-- Comparison Matrix -->
+    <div id="compareTable"></div>
+    <!-- Analytical Verdict Summary -->
+    <div id="compareSummary"></div>
+    <!-- Team Lessons Learned -->
+    <div id="compareLessons"></div>
+
+  </div>
+
+  <!-- ===================== TAB 2: ADD A DEAL ===================== -->
+  <div class="tab-panel" id="panel-add">
+    
     <div class="card">
-      <div class="photo-drop" id="photoDrop" onclick="document.getElementById('photoInput').click()">
-        <div><strong>Click to upload</strong> or drag photos here</div>
+      <h2 class="card-title">Vehicle Identification (VIN)</h2>
+      <p class="card-sub">Decode public NHTSA registry specs automatically, or describe the car manually.</p>
+      
+      <div class="input-search-wrap">
+        <input type="text" id="vinInput" placeholder="ENTER 17-CHARACTER VIN" maxlength="17" onkeydown="if(event.key==='Enter') decodeVin()">
+        <button class="btn-primary" id="fillBtn" onclick="decodeVin()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 21h5v-5"></path></svg>
+          <span>Auto Fill</span>
+        </button>
       </div>
-      <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
+      
+      <div id="status" class="status-box"></div>
+    </div>
+
+    <!-- Deal Form Grid -->
+    <div class="card">
+      <h2 class="card-title">Vehicle Specifications</h2>
+      <p class="card-sub">Specs auto-filled via VIN can be adjusted manually if needed.</p>
+      <div class="grid-2" id="vehicleGrid"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Deal & Financial Tracking</h2>
+      <p class="card-sub">Log ownership, financial investments, buyer assignment, and actual/projected profit.</p>
+      <div class="grid-2" id="ownerGrid"></div>
+    </div>
+
+    <!-- Photo Management -->
+    <div class="card">
+      <h2 class="card-title">Vehicle Photography</h2>
+      <p class="card-sub">Upload high-resolution vehicle photos. Files are stored directly in your Supabase Storage bucket.</p>
+
+      <div class="photo-drop" id="photoDrop" onclick="document.getElementById('photoInput').click()">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px;color:var(--accent);">
+          <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+          <circle cx="9" cy="9" r="2"></circle>
+          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+        </svg>
+        <div style="font-weight:600;font-size:14px;color:var(--ink);">Drop vehicle photos here, or click to browse</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">Supports PNG, JPEG, and WebP (up to 10MB per image)</div>
+        <input type="file" id="photoInput" multiple accept="image/*" style="display:none;">
+      </div>
+
       <div class="photo-gallery" id="photoGallery"></div>
     </div>
 
-    <p class="section-title">Vehicle details</p>
-    <p class="section-note">Pulled from the VIN decoder where available — everything stays editable.</p>
+    <!-- Notes & Insights -->
     <div class="card">
-      <div class="grid" id="vehicleGrid"></div>
-    </div>
-
-    <p class="section-title">The deal</p>
-    <p class="section-note">This is what makes future comparisons useful — the more you fill in, the better the comparisons get.</p>
-    <div class="card">
-      <div class="grid" id="ownerGrid"></div>
-      <div class="field field-full" style="margin-top:14px;">
-        <label for="lessonsLearned">What we learned</label>
-        <textarea id="lessonsLearned" placeholder="e.g. Easy to resell, but check the transmission carefully"></textarea>
+      <h2 class="card-title">Deal Notes & Lessons Learned</h2>
+      <p class="card-sub">Mechanical warnings, parts sources, or inspection notes that will automatically surface for future comparisons.</p>
+      
+      <div class="field" style="margin-bottom:14px;">
+        <label for="lessonsLearned">What We Learned (Surfaces automatically on matching comparisons)</label>
+        <textarea id="lessonsLearned" placeholder="e.g. Check torque converter shudder on this year/model; water pump prone to early leak"></textarea>
       </div>
-      <div class="field field-full" style="margin-top:14px;">
-        <label for="notes">Notes</label>
-        <textarea id="notes" placeholder="Anything else worth remembering about this vehicle"></textarea>
+
+      <div class="field">
+        <label for="notes">General Inspection Notes</label>
+        <textarea id="notes" placeholder="e.g. Clean interior, clean Carfax, minor scratch on rear passenger door"></textarea>
       </div>
     </div>
 
-    <p class="section-title">Custom fields</p>
-    <p class="section-note">Track anything the form above doesn't cover.</p>
+    <!-- Custom Dynamic Fields -->
     <div class="card">
+      <h2 class="card-title">Custom Deal Attributes</h2>
+      <p class="card-sub">Add any unique fields (e.g. Stock Number, Tag, Key Count, Transport Fee).</p>
       <div id="customFields"></div>
-      <button class="add-field-btn" onclick="addCustomField()">+ Add a field</button>
+      <button type="button" class="btn-primary btn-secondary" style="width:100%;margin-top:12px;" onclick="addCustomField()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <span>Add Custom Field</span>
+      </button>
     </div>
 
-    <div class="save-row">
-      <button class="btn-save" onclick="saveCar()">Save deal</button>
-      <button class="btn-save btn-secondary" onclick="exportPdf()">Export PDF</button>
+    <!-- Save Actions -->
+    <div style="margin-top:20px;">
+      <button type="button" class="btn-primary" style="width:100%;padding:16px;" onclick="saveCar()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        <span>Save Deal to Supabase Cloud</span>
+      </button>
+      <div id="savedNote" class="status-box ok" style="text-align:center;margin-top:12px;"></div>
+      <pre id="output" style="display:none;"></pre>
     </div>
-    <p class="saved-note" id="savedNote">Saved. Review the record below.</p>
-    <pre class="output" id="output"></pre>
+
   </div>
 
-  <!-- ===================== FIND A CAR ===================== -->
+  <!-- ===================== TAB 3: FIND A CAR ===================== -->
   <div class="tab-panel" id="panel-find">
-    <p class="section-title">Find a car</p>
-    <p class="section-note">Every deal you save is stored here — search by buyer name or VIN to see everything under them.</p>
+    
     <div class="card">
-      <div class="search-row">
-        <input type="text" id="buyerSearch" placeholder="Enter full buyer name or a VIN" oninput="searchByBuyer()">
+      <h2 class="card-title">Deal Directory & Buyer Search</h2>
+      <p class="card-sub">Instant cloud query across all stored deals by buyer name or VIN.</p>
+      
+      <div class="input-search-wrap">
+        <input type="text" id="buyerSearch" placeholder="SEARCH BY BUYER NAME OR VIN…" oninput="searchByBuyer()">
       </div>
-      <div class="buyer-results" id="buyerResults"></div>
-      <div class="buyer-actions" id="buyerActions" style="display:none;">
-        <span class="select-all" onclick="toggleSelectAll()">Select all</span>
-        <button class="btn-export-selected" id="exportSelectedBtn" onclick="exportSelectedToPdf()" disabled>Export selected to PDF</button>
+
+      <div id="buyerResults"></div>
+
+      <div id="buyerActions" style="display:none;align-items:center;justify-content:space-between;margin-top:18px;">
+        <span style="font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;" onclick="toggleSelectAll()">Select All</span>
+        <button class="btn-primary" id="exportSelectedBtn" onclick="exportSelectedToPdf()" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span>Export Selected to PDF</span>
+        </button>
       </div>
-      <p class="storage-note" id="storageNote">☁️ Deals are synchronized live with your Supabase PostgreSQL cloud database.</p>
+
+      <p style="font-size:12px;color:var(--ink-soft);margin-top:14px;">☁️ Real-time cloud sync with Supabase PostgreSQL.</p>
     </div>
+
   </div>
+
 </div>
 
 <div id="printArea"></div>
@@ -451,8 +942,10 @@
 function showTab(name){
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-' + name).classList.add('active');
-  document.querySelector(`.tab-btn[data-tab="${name}"]`).classList.add('active');
+  const target = document.getElementById('panel-' + name);
+  if(target) target.classList.add('active');
+  const btn = document.querySelector(`.tab-btn[data-tab="${name}"]`);
+  if(btn) btn.classList.add('active');
 }
 
 const VEHICLE_FIELDS = [
@@ -466,24 +959,24 @@ const VEHICLE_FIELDS = [
   {id:'bodyType', label:'Body type'},
   {id:'driveType', label:'Drive type'},
   {id:'fuelType', label:'Fuel type'},
-  {id:'exteriorColor', label:'Exterior color', full:false, note:'not VIN-decodable'},
+  {id:'exteriorColor', label:'Exterior color', note:'not in VIN'},
 ];
 
 const OWNER_FIELDS = [
   {id:'status', label:'Status', type:'select', options:['Owned','Listed','Sold']},
-  {id:'buyerName', label:'Buyer', type:'text', placeholder:'Who bought / has the car'},
+  {id:'buyerName', label:'Buyer', type:'text', placeholder:'Who bought / holds the car'},
   {id:'purchasePrice', label:'Purchase price', type:'text', placeholder:'$0'},
-  {id:'purchaseState', label:'Purchase state', type:'text', placeholder:'MD'},
+  {id:'purchaseState', label:'Purchase state', type:'text', placeholder:'e.g. MD'},
   {id:'purchaseDate', label:'Purchase date', type:'date'},
   {id:'currentMileage', label:'Mileage at purchase', type:'text', placeholder:'e.g. 48,500'},
-  {id:'condition', label:'Condition', type:'text', placeholder:'e.g. Good, needs work'},
+  {id:'condition', label:'Condition', type:'text', placeholder:'e.g. Excellent, Good, Fair'},
   {id:'seller', label:'Seller', type:'text', placeholder:'Dealer, private party, auction'},
-  {id:'location', label:'Location', type:'text', placeholder:'Where the deal happened'},
+  {id:'location', label:'Location', type:'text', placeholder:'Where the transaction occurred'},
   {id:'titleStatus', label:'Title status', type:'select', options:['Clean','Salvage','Rebuilt','Lien','Other']},
-  {id:'repairs', label:'Repair notes', type:'text', placeholder:'List repairs, comma separated'},
+  {id:'repairs', label:'Repair notes', type:'text', placeholder:'Comma-separated repairs needed'},
   {id:'repairCost', label:'Repair cost', type:'text', placeholder:'$0'},
-  {id:'otherCosts', label:'Other costs', type:'text', placeholder:'Transport, fees, etc.'},
-  {id:'saleInfo', label:'Sale information', type:'text', placeholder:'Pending, sold, asking price'},
+  {id:'otherCosts', label:'Other costs', type:'text', placeholder:'Transport, inspection, fees'},
+  {id:'saleInfo', label:'Sale information', type:'text', placeholder:'Pending, sold, asking'},
   {id:'salePrice', label:'Sale price', type:'text', placeholder:'$0 (if sold)'},
   {id:'dealRating', label:'Deal rating', type:'select', options:['1','2','3','4','5']},
 ];
@@ -507,48 +1000,36 @@ function buildVehicleGrid(){
 function buildOwnerGrid(){
   const grid = document.getElementById('ownerGrid');
   grid.innerHTML = OWNER_FIELDS.map(f => {
-    const control = f.type === 'select'
-      ? `<select id="o_${f.id}">
-          <option value="">—</option>
-          ${f.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
-        </select>`
-      : `<input type="${f.type}" id="o_${f.id}" placeholder="${f.placeholder || ''}">`;
-    return `
-    <div class="field">
-      <label for="o_${f.id}">${f.label}</label>
-      ${control}
-    </div>
-  `;
+    let input = '';
+    if(f.type === 'select'){
+      input = `<select id="o_${f.id}">${f.options.map(o => `<option value="${o}">${o}</option>`).join('')}</select>`;
+    } else {
+      input = `<input type="${f.type || 'text'}" id="o_${f.id}" placeholder="${f.placeholder || ''}">`;
+    }
+    return `<div class="field"><label for="o_${f.id}">${f.label}</label>${input}</div>`;
   }).join('');
 }
 
-buildVehicleGrid();
-buildOwnerGrid();
-
-function toggleManualLookup(){
-  const el = document.getElementById('manualLookup');
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-
 function setStatus(msg, kind){
-  const box = document.getElementById('statusBox');
-  box.textContent = msg;
-  box.className = 'status show ' + kind;
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = msg ? 'status-box show ' + kind : 'status-box';
 }
 
-function markAutoFilled(id, value){
-  const input = document.getElementById('v_' + id);
-  if(!input) return;
-  if(value && value.trim()){
+function markAutoFilled(fieldId, value){
+  const input = document.getElementById('v_' + fieldId);
+  const badge = document.getElementById('badge_' + fieldId);
+  if(input && value){
     input.value = value;
-    document.getElementById('badge_' + id).style.display = 'inline-block';
-    autoFilledIds.add(id);
+    if(badge) badge.style.display = 'inline-block';
+    autoFilledIds.add(fieldId);
   }
 }
 
 function clearAutoBadges(){
-  VEHICLE_FIELDS.forEach(f => {
-    document.getElementById('badge_' + f.id).style.display = 'none';
+  autoFilledIds.forEach(id => {
+    const badge = document.getElementById('badge_' + id);
+    if(badge) badge.style.display = 'none';
   });
   autoFilledIds.clear();
 }
@@ -556,12 +1037,12 @@ function clearAutoBadges(){
 async function decodeVin(){
   const vin = document.getElementById('vinInput').value.trim().toUpperCase();
   if(vin.length !== 17){
-    setStatus('VINs are 17 characters — double check and try again.', 'err');
+    setStatus('VINs are 17 characters — double-check and try again.', 'err');
     return;
   }
   const btn = document.getElementById('fillBtn');
   btn.disabled = true;
-  setStatus('Looking up VIN…', 'loading');
+  setStatus('Querying NHTSA VPIC database…', 'loading');
   clearAutoBadges();
 
   try{
@@ -574,14 +1055,6 @@ async function decodeVin(){
       return r ? r.Value : '';
     };
 
-    const errorCode = get('Error Code');
-    if(errorCode && errorCode !== '0'){
-      const errText = get('Error Text');
-      setStatus(errText || 'That VIN didn\'t decode cleanly. Fields below are still editable by hand.', 'err');
-    } else {
-      setStatus('VIN decoded. Review the fields below before saving.', 'ok');
-    }
-
     markAutoFilled('vin', vin);
     markAutoFilled('year', get('Model Year'));
     markAutoFilled('make', get('Make'));
@@ -593,50 +1066,12 @@ async function decodeVin(){
     markAutoFilled('bodyType', get('Body Class'));
     markAutoFilled('driveType', get('Drive Type'));
     markAutoFilled('fuelType', get('Fuel Type - Primary'));
+
+    setStatus('Vehicle identified. Specs auto-filled below.', 'ok');
   } catch(err){
-    setStatus('Couldn\'t reach the VIN decoder. Enter the details manually below.', 'err');
+    setStatus('Could not reach VIN decoder. Enter specs manually below.', 'err');
   } finally {
     btn.disabled = false;
-  }
-}
-
-async function decodeDescription(){
-  const desc = document.getElementById('descInput').value.trim();
-  if(!desc){
-    setStatus('Type a year, make, and model to look up.', 'err');
-    return;
-  }
-  const parts = desc.split(/\s+/);
-  const yearMatch = parts.find(p => /^(19|20)\d{2}$/.test(p));
-  if(!yearMatch){
-    setStatus('Include a 4-digit year so the lookup can match it, e.g. "2020 Honda Accord".', 'err');
-    return;
-  }
-  const rest = parts.filter(p => p !== yearMatch);
-  const make = rest[0] || '';
-  const model = rest.slice(1).join(' ') || '';
-
-  setStatus('Looking up vehicle…', 'loading');
-  clearAutoBadges();
-
-  try{
-    const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeYear/make/${encodeURIComponent(make)}/modelyear/${yearMatch}?format=json`);
-    if(!res.ok) throw new Error('Request failed');
-    const data = await res.json();
-    const results = data.Results || [];
-    const matched = results.find(r => model.toLowerCase().includes(r.Model_Name.toLowerCase()) || r.Model_Name.toLowerCase().includes(model.toLowerCase()));
-
-    markAutoFilled('year', yearMatch);
-    markAutoFilled('make', make);
-    markAutoFilled('model', matched ? matched.Model_Name : model);
-
-    if(matched){
-      setStatus(`Matched ${yearMatch} ${make} ${matched.Model_Name}. Trim, engine, and other specs vary by VIN — enter those manually or paste the VIN above.`, 'ok');
-    } else {
-      setStatus('Matched year and make. Model wasn\'t exact — check the field, and fill remaining specs by hand.', 'err');
-    }
-  } catch(err){
-    setStatus('Couldn\'t reach the vehicle lookup. Enter the details manually below.', 'err');
   }
 }
 
@@ -646,7 +1081,7 @@ let photoCount = 0;
 function renderPhotoGallery(){
   const gallery = document.getElementById('photoGallery');
   gallery.innerHTML = photos.map((p, i) => `
-    <div class="photo-thumb ${i === 0 ? 'is-cover' : ''}">
+    <div class="photo-thumb">
       <img src="${p.dataUrl}" alt="${p.name}">
       ${i === 0 ? '<div class="cover-tag">Cover</div>' : `<button class="make-cover" onclick="makeCover(${p.id})">Make cover</button>`}
       <button class="photo-remove" onclick="removePhoto(${p.id})" aria-label="Remove photo">×</button>
@@ -701,26 +1136,28 @@ function addCustomField(label, value){
   const id = 'custom_' + customFieldCount;
   const wrap = document.getElementById('customFields');
   const row = document.createElement('div');
-  row.className = 'custom-row';
+  row.className = 'grid-2';
   row.id = 'row_' + id;
+  row.style.marginBottom = '10px';
+  row.style.alignItems = 'flex-end';
   row.innerHTML = `
     <div class="field">
-      <label>Field name</label>
-      <input type="text" id="${id}_label" placeholder="e.g. License plate" value="${label ? label.replace(/"/g,'&quot;') : ''}">
+      <label>Field Name</label>
+      <input type="text" id="${id}_label" placeholder="e.g. Stock Number" value="${label ? label.replace(/"/g,'&quot;') : ''}">
     </div>
-    <div class="field">
-      <label>Value</label>
-      <input type="text" id="${id}_value" placeholder="e.g. 7ABC123" value="${value ? value.replace(/"/g,'&quot;') : ''}">
+    <div style="display:flex;gap:10px;align-items:flex-end;">
+      <div class="field" style="flex:1;">
+        <label>Value</label>
+        <input type="text" id="${id}_value" placeholder="e.g. STK-8821" value="${value ? value.replace(/"/g,'&quot;') : ''}">
+      </div>
+      <button type="button" class="btn-delete-deal" style="height:38px;width:38px;" onclick="document.getElementById('row_${id}').remove()">×</button>
     </div>
-    <button class="remove-btn" onclick="document.getElementById('row_${id}').remove()" aria-label="Remove field">×</button>
   `;
   wrap.appendChild(row);
 }
 
 function formatDealForPrint(c) {
   const title = [c.year, c.make, c.model, c.trim].filter(Boolean).join(' ') || c.title || 'Vehicle record';
-  const v = c.record ? c.record.vehicle || {} : {};
-  const r = c.record ? c.record.records || {} : {};
   const photoList = Array.isArray(c.photos)
     ? c.photos.map(p => ({ dataUrl: p.url || p.dataUrl, name: p.name || 'Photo' }))
     : (c.photos || []);
@@ -730,39 +1167,39 @@ function formatDealForPrint(c) {
     photos: photoList,
     record: {
       vehicle: {
-        'VIN': c.vin || v.VIN || '',
-        'Year': c.year || v.Year || '',
-        'Make': c.make || v.Make || '',
-        'Model': c.model || v.Model || '',
-        'Trim': c.trim || v.Trim || '',
-        'Engine': c.engine || v.Engine || '',
-        'Transmission': c.transmission || v.Transmission || '',
-        'Body type': c.body_type || v['Body type'] || '',
-        'Drive type': c.drive_type || v['Drive type'] || '',
-        'Fuel type': c.fuel_type || v['Fuel type'] || '',
-        'Exterior color': c.exterior_color || v['Exterior color'] || ''
+        'VIN': c.vin || '',
+        'Year': c.year || '',
+        'Make': c.make || '',
+        'Model': c.model || '',
+        'Trim': c.trim || '',
+        'Engine': c.engine || '',
+        'Transmission': c.transmission || '',
+        'Body type': c.body_type || '',
+        'Drive type': c.drive_type || '',
+        'Fuel type': c.fuel_type || '',
+        'Exterior color': c.exterior_color || ''
       },
       records: {
-        'Status': c.status || r['Status'] || '',
-        'Buyer': c.buyer_name || c.buyerName || r['Buyer'] || '',
-        'Purchase price': c.purchase_price != null ? '$' + c.purchase_price : (r['Purchase price'] || ''),
-        'Purchase state': c.purchase_state || r['Purchase state'] || '',
-        'Purchase date': c.purchase_date || r['Purchase date'] || '',
-        'Mileage at purchase': c.mileage != null ? c.mileage.toLocaleString() : (r['Mileage at purchase'] || ''),
-        'Condition': c.condition || r['Condition'] || '',
-        'Seller': c.seller || r['Seller'] || '',
-        'Location': c.location || r['Location'] || '',
-        'Title status': c.title_status || r['Title status'] || '',
-        'Repair notes': c.repair_notes || r['Repair notes'] || '',
-        'Repair cost': c.repair_cost != null ? '$' + c.repair_cost : (r['Repair cost'] || ''),
-        'Other costs': c.other_costs != null ? '$' + c.other_costs : (r['Other costs'] || ''),
-        'Sale info': c.sale_info || r['Sale information'] || '',
-        'Sale price': c.sale_price != null ? '$' + c.sale_price : (r['Sale price'] || ''),
-        'Deal rating': c.deal_rating ? c.deal_rating + '/5' : (r['Deal rating'] ? r['Deal rating'] + '/5' : ''),
-        'What we learned': c.lessons_learned || r['What we learned'] || '',
-        'Notes': c.notes || r['Notes'] || ''
+        'Status': c.status || '',
+        'Buyer': c.buyer_name || '',
+        'Purchase price': c.purchase_price != null ? '$' + c.purchase_price : '',
+        'Purchase state': c.purchase_state || '',
+        'Purchase date': c.purchase_date || '',
+        'Mileage at purchase': c.mileage != null ? c.mileage.toLocaleString() : '',
+        'Condition': c.condition || '',
+        'Seller': c.seller || '',
+        'Location': c.location || '',
+        'Title status': c.title_status || '',
+        'Repair notes': c.repair_notes || '',
+        'Repair cost': c.repair_cost != null ? '$' + c.repair_cost : '',
+        'Other costs': c.other_costs != null ? '$' + c.other_costs : '',
+        'Sale info': c.sale_info || '',
+        'Sale price': c.sale_price != null ? '$' + c.sale_price : '',
+        'Deal rating': c.deal_rating ? c.deal_rating + '/5' : '',
+        'What we learned': c.lessons_learned || '',
+        'Notes': c.notes || ''
       },
-      custom: c.custom_fields || c.custom || {}
+      custom: c.custom_fields || {}
     }
   };
 }
@@ -787,27 +1224,28 @@ function getRecord(){
   const notes = document.getElementById('notes').value.trim();
   if(notes) record.records['Notes'] = notes;
 
-  document.querySelectorAll('.custom-row').forEach(row => {
+  document.querySelectorAll('#customFields .grid-2').forEach(row => {
     const labelInput = row.querySelector('input[id$="_label"]');
     const valueInput = row.querySelector('input[id$="_value"]');
-    const label = labelInput.value.trim();
-    const value = valueInput.value.trim();
-    if(label) record.custom[label] = value;
+    if(labelInput && valueInput){
+      const label = labelInput.value.trim();
+      const value = valueInput.value.trim();
+      if(label) record.custom[label] = value;
+    }
   });
   return record;
 }
 
 async function saveCar(){
-  const saveBtn = document.querySelector('.btn-save');
-  const origBtnText = saveBtn ? saveBtn.textContent : 'Save deal';
+  const saveBtn = document.querySelector('button[onclick="saveCar()"]');
+  const origText = saveBtn ? saveBtn.innerHTML : 'Save Deal';
   if(saveBtn){
     saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving to Supabase Cloud…';
+    saveBtn.innerHTML = '<span>Uploading Photos & Storing in Supabase…</span>';
   }
 
   const record = getRecord();
 
-  // Upload photos to Supabase Storage bucket ('deal-photos')
   const uploadedPhotos = [];
   for(const p of photos){
     if(p.file && window.SupabaseAuth){
@@ -862,22 +1300,18 @@ async function saveCar(){
 
   try {
     const saved = await window.SupabaseAuth.saveDealToCloud(dealPayload);
-    const out = document.getElementById('output');
-    out.textContent = JSON.stringify(saved || dealPayload, null, 2);
-    out.className = 'output show';
-
     const note = document.getElementById('savedNote');
-    note.textContent = '✓ Deal saved live to Supabase PostgreSQL database!';
-    note.className = 'saved-note show';
+    note.textContent = '✓ Deal successfully committed live to Supabase PostgreSQL database!';
+    note.className = 'status-box ok show';
 
     await loadSavedCarsForCompare();
   } catch(err) {
-    console.error('Error saving deal to Supabase:', err);
+    console.error('Save error:', err);
     alert('Failed to save to Supabase: ' + (err.message || err));
   } finally {
     if(saveBtn){
       saveBtn.disabled = false;
-      saveBtn.textContent = origBtnText;
+      saveBtn.innerHTML = origText;
     }
   }
 }
@@ -895,10 +1329,10 @@ function buildPrintSections(entries){
     return `
       <div class="print-page">
         <div class="print-title">${title}</div>
-        <div class="print-sub">Vehicle record exported ${new Date().toLocaleDateString()}</div>
-        ${section('Vehicle details', record.vehicle)}
-        ${section('The deal', record.records)}
-        ${section('Custom fields', record.custom)}
+        <div class="print-sub">DealTrace Valuation Report exported ${new Date().toLocaleDateString()}</div>
+        ${section('Vehicle Details', record.vehicle)}
+        ${section('Financials & Terms', record.records)}
+        ${section('Custom Attributes', record.custom)}
         ${photoBlock}
       </div>
     `;
@@ -930,7 +1364,7 @@ async function searchByBuyer(){
   buyerMatches = await window.SupabaseAuth.searchDealsInCloud(query);
 
   if(!buyerMatches.length){
-    resultsEl.innerHTML = '<div class="buyer-empty">No match in cloud database — enter the buyer\'s full name or a VIN.</div>';
+    resultsEl.innerHTML = '<div style="font-size:13.5px;color:var(--ink-soft);text-align:center;padding:20px 0;">No matching deals in cloud database. Try a different buyer name or VIN.</div>';
     actionsEl.style.display = 'none';
     return;
   }
@@ -942,12 +1376,14 @@ async function searchByBuyer(){
     <div class="buyer-result">
       <label style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;">
         <input type="checkbox" class="buyer-check" data-idx="${i}" onchange="updateExportButton()">
-        <div class="br-info">
-          <div class="br-title">${title}</div>
-          <div class="br-meta">${c.buyer_name ? 'Buyer: ' + c.buyer_name + ' · ' : ''}${c.vin ? 'VIN: ' + c.vin + ' · ' : ''}Saved ${new Date(c.created_at).toLocaleDateString()}</div>
+        <div>
+          <div class="buyer-title">${title}</div>
+          <div class="buyer-meta">${c.buyer_name ? 'Buyer: ' + c.buyer_name + ' · ' : ''}${c.vin ? 'VIN: ' + c.vin + ' · ' : ''}Saved ${new Date(c.created_at).toLocaleDateString()}</div>
         </div>
       </label>
-      <button class="buyer-delete" onclick="deleteCar('${c.id}')" aria-label="Delete this car" title="Delete from Supabase">×</button>
+      <button class="btn-delete-deal" onclick="deleteCar('${c.id}')" aria-label="Delete deal" title="Delete from Supabase">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+      </button>
     </div>
   `;
   }).join('');
@@ -984,7 +1420,7 @@ function exportSelectedToPdf(){
   window.print();
 }
 
-// ===================== COMPARE (Live Supabase Data) =====================
+// ===================== COMPARE (Live Supabase Engine) =====================
 let compareNewVehicle = {};
 let compareMatches = [];
 let allSavedCars = [];
@@ -1002,7 +1438,7 @@ async function loadSavedCarsForCompare(){
 function setCompareStatus(msg, kind){
   const box = document.getElementById('compareStatus');
   box.textContent = msg;
-  box.className = msg ? 'compare-status show ' + kind : 'compare-status';
+  box.className = msg ? 'status-box show ' + kind : 'status-box';
 }
 
 function norm(s){ return (s || '').toString().trim().toLowerCase(); }
@@ -1062,12 +1498,12 @@ function dealMetrics(c){
 async function decodeCompareVin(){
   const vin = document.getElementById('compareVinInput').value.trim().toUpperCase();
   if(vin.length !== 17){
-    setCompareStatus('VINs are 17 characters — double check and try again.', 'err');
+    setCompareStatus('VINs are exactly 17 characters — check and try again.', 'err');
     return;
   }
   const btn = document.getElementById('compareVinBtn');
   btn.disabled = true;
-  setCompareStatus('Looking up VIN…', 'loading');
+  setCompareStatus('Looking up factory specs via NHTSA VPIC…', 'loading');
 
   try{
     const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
@@ -1104,40 +1540,52 @@ async function decodeCompareVin(){
     });
 
     if(compareMatches.length){
-      setCompareStatus(`Found ${compareMatches.length} past deal${compareMatches.length > 1 ? 's' : ''} on a ${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model}. Add what you know, then compare.`, 'ok');
+      setCompareStatus(`Found ${compareMatches.length} historical deal${compareMatches.length > 1 ? 's' : ''} on ${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model}. Adjust target financials below to see live delta metrics.`, 'ok');
     } else {
-      setCompareStatus(`No past deals on a ${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model} yet — you can still see the numbers you enter below.`, 'err');
+      setCompareStatus(`Zero past deals found on ${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model}. You can still log and compare this deal to start building model history.`, 'loading');
     }
+
+    renderComparison();
   } catch(err){
-    setCompareStatus("Couldn't reach the VIN decoder. Try again once you're online.", 'err');
+    setCompareStatus("Could not reach the vehicle VIN decoder. Check internet connection.", 'err');
   } finally {
     btn.disabled = false;
   }
 }
 
 function renderComparison(){
-  if(!compareNewVehicle.VIN){
-    setCompareStatus('Paste and decode a VIN first.', 'err');
-    return;
-  }
+  if(!compareNewVehicle.VIN) return;
 
   const newPrice = toNumber(document.getElementById('compareNewPrice').value);
   const newMileage = toNumber(document.getElementById('compareNewMileage').value);
   const newRepairCost = toNumber(document.getElementById('compareNewRepairCost').value);
   const newOtherCosts = toNumber(document.getElementById('compareNewOtherCosts').value);
   const newTotalInvested = newPrice != null ? newPrice + (newRepairCost || 0) + (newOtherCosts || 0) : null;
-
   const title = [compareNewVehicle.Year, compareNewVehicle.Make, compareNewVehicle.Model, compareNewVehicle.Trim].filter(Boolean).join(' ');
 
   document.getElementById('compareCurrentCard').innerHTML = `
-    <div class="card" style="margin-top:20px;">
-      <p class="plate-label">Car you're considering</p>
-      <div class="spec-line"><span class="k">Vehicle</span><span class="v">${title || '—'}</span></div>
-      <div class="spec-line"><span class="k">VIN</span><span class="v">${compareNewVehicle.VIN}</span></div>
-      <div class="spec-line"><span class="k">Mileage</span><span class="v">${fmtNum(newMileage)}</span></div>
-      <div class="spec-line"><span class="k">Asking price</span><span class="v">${fmtMoney(newPrice)}</span></div>
-      <div class="spec-line"><span class="k">Estimated repairs</span><span class="v">${fmtMoney(newRepairCost)}</span></div>
-      <div class="spec-line total"><span class="k">Estimated total investment</span><span class="v">${fmtMoney(newTotalInvested)}</span></div>
+    <div class="card" style="margin-top:24px;">
+      <h3 class="card-title">Prospective Vehicle: ${title}</h3>
+      <p class="card-sub">VIN: <span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--ink);">${compareNewVehicle.VIN}</span></p>
+
+      <div class="metric-tiles">
+        <div class="metric-tile">
+          <div class="metric-tile-label">Asking Price</div>
+          <div class="metric-tile-value">${fmtMoney(newPrice)}</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-tile-label">Mileage</div>
+          <div class="metric-tile-value">${fmtNum(newMileage)}</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-tile-label">Est. Repairs</div>
+          <div class="metric-tile-value">${fmtMoney(newRepairCost)}</div>
+        </div>
+        <div class="metric-tile highlight">
+          <div class="metric-tile-label">Est. Total Invested</div>
+          <div class="metric-tile-value">${fmtMoney(newTotalInvested)}</div>
+        </div>
+      </div>
     </div>
   `;
 
@@ -1145,15 +1593,16 @@ function renderComparison(){
     document.getElementById('compareTable').innerHTML = '';
     document.getElementById('compareSummary').innerHTML = `
       <div class="summary-card">
-        <span class="summary-badge none">Not enough history to compare</span>
-        <p class="summary-stats">We haven't saved a deal on a ${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model} yet, so there's nothing to stack this one against. Save this deal once it's done to start building history for next time.</p>
+        <span class="summary-badge none">Baseline Needed</span>
+        <div class="summary-lead">No historical deals recorded for ${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model} yet.</div>
+        <p class="summary-stats-p">Once you complete and save this purchase, DealTrace will automatically benchmark all future opportunities on this exact model against your actual numbers.</p>
       </div>
     `;
     document.getElementById('compareLessons').innerHTML = '';
     lastCompare = {
       title, vin: compareNewVehicle.VIN, newMileage, newPrice, newRepairCost, newTotalInvested,
-      deals: [], badgeText: 'Not enough history to compare',
-      historyText: `We haven't saved a deal on a ${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model} yet.`,
+      deals: [], badgeText: 'Baseline Needed',
+      historyText: `No saved deals on ${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model} yet.`,
       statsLines: [], deltas: [], verdict: '', lessons: []
     };
     return;
@@ -1168,84 +1617,94 @@ function renderComparison(){
   const avgNetProfit = average(soldDeals.map(d => d.netProfit));
   const profitableCount = soldDeals.filter(d => d.netProfit > 0).length;
 
-  const colTemplate = `150px repeat(${deals.length + 1}, minmax(105px, 1fr))`;
-
-  function cellClass(currentVal, avgVal, lowerIsBetter){
-    if(currentVal == null || avgVal == null || currentVal === avgVal) return '';
-    const better = lowerIsBetter ? currentVal < avgVal : currentVal > avgVal;
-    return better ? 'cmp-good' : 'cmp-bad';
+  function deltaPill(val, avg, lowerIsBetter = true) {
+    if(val == null || avg == null || val === avg) return '';
+    const diff = Math.abs(val - avg);
+    const isGood = lowerIsBetter ? val < avg : val > avg;
+    const sign = val < avg ? '-' : '+';
+    return `<span class="delta-pill ${isGood ? 'good' : 'bad'}">${sign}${fmtMoney(diff)}</span>`;
   }
 
-  function row(label, currentDisplay, currentClass, dealFn){
-    const cells = deals.map(d => `<div class="cmp-cell">${dealFn(d)}</div>`).join('');
-    return `<div class="cmp-row">
-      <div class="cmp-cell attr">${label}</div>
-      <div class="cmp-cell current ${currentClass}">${currentDisplay}</div>
-      ${cells}
-    </div>`;
-  }
+  const tableHeader = `
+    <tr>
+      <th>Metric</th>
+      <th class="col-current">This Car</th>
+      ${deals.map(d => `<th>${d.buyer ? d.buyer + "'s Deal" : d.title}</th>`).join('')}
+    </tr>
+  `;
 
-  const headerCells = `<div class="cmp-cell attr">&nbsp;</div>` +
-    `<div class="cmp-cell current">Current Car</div>` +
-    deals.map(d => `<div class="cmp-cell">${d.buyer ? d.buyer + "'s Deal" : d.title}</div>`).join('');
-
-  const netProfitRow = `<div class="cmp-row">
-    <div class="cmp-cell attr">Net profit</div>
-    <div class="cmp-cell current">—</div>
-    ${deals.map(d => `<div class="cmp-cell ${d.netProfit == null ? '' : (d.netProfit > 0 ? 'cmp-good' : (d.netProfit < 0 ? 'cmp-bad' : ''))}">${d.netProfit == null ? '—' : (d.netProfit > 0 ? '+' : '') + fmtMoney(d.netProfit)}</div>`).join('')}
-  </div>`;
-
-  const rowsHtml = [
-    row('Year', compareNewVehicle.Year || '—', '', d => d.vehicle.Year || '—'),
-    row('Model', [compareNewVehicle.Model, compareNewVehicle.Trim].filter(Boolean).join(' ') || '—', '', d => [d.vehicle.Model, d.vehicle.Trim].filter(Boolean).join(' ') || '—'),
-    row('Mileage', fmtNum(newMileage), cellClass(newMileage, avgMileage, true), d => fmtNum(d.mileage)),
-    row('Purchase', fmtMoney(newPrice), cellClass(newPrice, avgPurchase, true), d => fmtMoney(d.purchase)),
-    row('Repairs', fmtMoney(newRepairCost), cellClass(newRepairCost, avgRepairCost, true), d => fmtMoney(d.repairCost)),
-    row('Total invested', fmtMoney(newTotalInvested), cellClass(newTotalInvested, avgTotalInvested, true), d => fmtMoney(d.totalInvested)),
-    row('Sale price', '—', '', d => fmtMoney(d.salePrice)),
-    netProfitRow,
-    row('Deal rating', '—', '', d => d.rating ? d.rating + '/5' : '—'),
-    row('Date saved', 'Today', '', d => new Date(d.savedAt).toLocaleDateString()),
+  const rows = [
+    `<tr>
+      <td><b>Year / Trim</b></td>
+      <td class="col-current">${compareNewVehicle.Year} ${compareNewVehicle.Trim || ''}</td>
+      ${deals.map(d => `<td>${d.vehicle.Year} ${d.vehicle.Trim || ''}</td>`).join('')}
+    </tr>`,
+    `<tr>
+      <td><b>Mileage</b></td>
+      <td class="col-current">${fmtNum(newMileage)}</td>
+      ${deals.map(d => `<td>${fmtNum(d.mileage)}</td>`).join('')}
+    </tr>`,
+    `<tr>
+      <td><b>Purchase Price</b></td>
+      <td class="col-current">${fmtMoney(newPrice)} ${deltaPill(newPrice, avgPurchase, true)}</td>
+      ${deals.map(d => `<td>${fmtMoney(d.purchase)}</td>`).join('')}
+    </tr>`,
+    `<tr>
+      <td><b>Repairs</b></td>
+      <td class="col-current">${fmtMoney(newRepairCost)} ${deltaPill(newRepairCost, avgRepairCost, true)}</td>
+      ${deals.map(d => `<td>${fmtMoney(d.repairCost)}</td>`).join('')}
+    </tr>`,
+    `<tr>
+      <td><b>Total Invested</b></td>
+      <td class="col-current">${fmtMoney(newTotalInvested)} ${deltaPill(newTotalInvested, avgTotalInvested, true)}</td>
+      ${deals.map(d => `<td>${fmtMoney(d.totalInvested)}</td>`).join('')}
+    </tr>`,
+    `<tr>
+      <td><b>Sale Price</b></td>
+      <td class="col-current">—</td>
+      ${deals.map(d => `<td>${fmtMoney(d.salePrice)}</td>`).join('')}
+    </tr>`,
+    `<tr>
+      <td><b>Net Profit Margin</b></td>
+      <td class="col-current">—</td>
+      ${deals.map(d => `<td class="${d.netProfit == null ? '' : (d.netProfit > 0 ? 'cmp-good' : (d.netProfit < 0 ? 'cmp-bad' : ''))}">${d.netProfit == null ? '—' : (d.netProfit > 0 ? '+' : '') + fmtMoney(d.netProfit)}</td>`).join('')}
+    </tr>`,
+    `<tr>
+      <td><b>Deal Rating</b></td>
+      <td class="col-current">—</td>
+      ${deals.map(d => `<td>${d.rating ? '★ ' + d.rating + '/5' : '—'}</td>`).join('')}
+    </tr>`,
+    `<tr>
+      <td><b>Date Logged</b></td>
+      <td class="col-current">Today</td>
+      ${deals.map(d => `<td>${new Date(d.savedAt).toLocaleDateString()}</td>`).join('')}
+    </tr>`,
   ].join('');
 
   document.getElementById('compareTable').innerHTML = `
-    <p class="section-title" style="margin-top:24px;font-size:16px;">Our previous deals</p>
-    <div class="cmp-table">
-      <div class="cmp-row head">${headerCells}</div>
-      ${rowsHtml}
+    <div class="cmp-wrapper">
+      <table class="cmp-table">
+        <thead>${tableHeader}</thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>
   `;
-  document.querySelectorAll('#compareTable .cmp-row').forEach(r => r.style.gridTemplateColumns = colTemplate);
 
-  // Summary
+  // Summary Verdict Calculation
   let historyLabel, historyText;
   if(soldDeals.length){
     const ratio = profitableCount / soldDeals.length;
     historyLabel = ratio >= 0.6 ? 'good' : (ratio <= 0.4 ? 'poor' : 'mixed');
-    historyText = `We've bought ${deals.length} similar ${deals.length === 1 ? 'car' : 'cars'}. ${profitableCount} of ${soldDeals.length} sold ${profitableCount === 1 ? 'was' : 'were'} profitable.`;
+    historyText = `Based on ${deals.length} previous deal${deals.length === 1 ? '' : 's'}, ${profitableCount} of ${soldDeals.length} sold vehicles were profitable.`;
   } else {
     historyLabel = 'mixed';
-    historyText = `We've bought ${deals.length} similar ${deals.length === 1 ? 'car' : 'cars'}, but none has sold yet — so there's no profit history, only price, mileage, and repairs to compare.`;
+    historyText = `Tracked ${deals.length} past deal${deals.length === 1 ? '' : 's'}, but none have completed sale yet — benchmark is based on price, mileage, and repair estimates.`;
   }
 
   const statsLines = [];
-  if(avgPurchase != null) statsLines.push(`Average purchase price: ${fmtMoney(avgPurchase)}`);
-  if(avgRepairCost != null) statsLines.push(`Average repair cost: ${fmtMoney(avgRepairCost)}`);
-  if(avgNetProfit != null) statsLines.push(`Average net profit: ${(avgNetProfit > 0 ? '+' : '') + fmtMoney(avgNetProfit)}`);
-
-  const deltas = [];
-  if(newPrice != null && avgPurchase != null){
-    const diff = Math.abs(newPrice - avgPurchase);
-    if(diff > 0) deltas.push(`${fmtMoney(diff)} ${newPrice < avgPurchase ? 'below' : 'above'} our average purchase price`);
-  }
-  if(newMileage != null && avgMileage != null){
-    const diff = Math.abs(newMileage - avgMileage);
-    if(diff > 0) deltas.push(`${fmtNum(diff)} miles ${newMileage < avgMileage ? 'below' : 'above'} our average mileage`);
-  }
-  if(newRepairCost != null && avgRepairCost != null){
-    const diff = Math.abs(newRepairCost - avgRepairCost);
-    if(diff > 0) deltas.push(`${fmtMoney(diff)} ${newRepairCost < avgRepairCost ? 'below' : 'above'} our average repair cost`);
-  }
+  if(avgPurchase != null) statsLines.push(`Average Purchase: <b>${fmtMoney(avgPurchase)}</b>`);
+  if(avgRepairCost != null) statsLines.push(`Average Repairs: <b>${fmtMoney(avgRepairCost)}</b>`);
+  if(avgNetProfit != null) statsLines.push(`Average Net Profit: <b>${(avgNetProfit > 0 ? '+' : '') + fmtMoney(avgNetProfit)}</b>`);
 
   let favorable = 0, unfavorable = 0;
   if(newPrice != null && avgPurchase != null && newPrice !== avgPurchase) (newPrice < avgPurchase ? favorable++ : unfavorable++);
@@ -1253,89 +1712,71 @@ function renderComparison(){
   if(newRepairCost != null && avgRepairCost != null && newRepairCost !== avgRepairCost) (newRepairCost < avgRepairCost ? favorable++ : unfavorable++);
 
   let verdict;
-  if(favorable === 0 && unfavorable === 0) verdict = 'Not enough numbers entered yet to compare on price, mileage, or repairs.';
-  else if(favorable > unfavorable) verdict = 'Looks better than our average deal on the numbers we have.';
-  else if(unfavorable > favorable) verdict = 'Higher risk based on our previous experience with this model.';
-  else verdict = 'Similar to our previous deals overall.';
+  if(favorable === 0 && unfavorable === 0) verdict = 'Input prospective price or mileage to unlock automated risk scoring.';
+  else if(favorable > unfavorable) verdict = 'Favorable Valuation: This vehicle stacks up better than your team\'s average deal on recorded metrics.';
+  else if(unfavorable > favorable) verdict = 'Elevated Risk: Costs or mileage trend higher than your dealership\'s past successful margins.';
+  else verdict = 'Consistent: Metrics align closely with your team\'s baseline for this model.';
 
-  const badgeText = {good:'Our history with this model: GOOD', mixed:'Our history with this model: MIXED', poor:'Our history with this model: POOR'}[historyLabel];
+  const badgeText = {good:'Model History: High Profitability (Good)', mixed:'Model History: Mixed Margins', poor:'Model History: High Risk / Poor'}[historyLabel];
 
   document.getElementById('compareSummary').innerHTML = `
     <div class="summary-card">
       <span class="summary-badge ${historyLabel}">${badgeText}</span>
-      <p class="summary-stats">${historyText}</p>
-      ${statsLines.length ? `<p class="summary-stats">${statsLines.join(' · ')}</p>` : ''}
-      ${deltas.length ? `<p class="summary-stats">The car you're considering is ${deltas.join(', ')}.</p>` : ''}
-      <p class="summary-line">${verdict}</p>
+      <div class="summary-lead">${verdict}</div>
+      <p class="summary-stats-p">${historyText}</p>
+      ${statsLines.length ? `<p class="summary-stats-p">${statsLines.join(' · ')}</p>` : ''}
     </div>
   `;
 
   const lessons = deals.filter(d => d.lessons);
   document.getElementById('compareLessons').innerHTML = lessons.length ? `
-    <div class="card lessons-card">
-      <p class="section-title" style="font-size:15px;">What our friends learned</p>
-      ${lessons.map(d => `<div class="lesson-item"><b>${d.buyer || d.title}:</b> ${d.lessons}</div>`).join('')}
+    <div class="card" style="margin-top:20px;border-left:4px solid var(--accent);">
+      <h3 class="card-title" style="font-size:15px;">Team Lessons Learned & Watchouts</h3>
+      ${lessons.map(d => `<div style="padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;"><b>${d.buyer || d.title}:</b> ${d.lessons}</div>`).join('')}
     </div>
   ` : '';
 
   lastCompare = {
     title, vin: compareNewVehicle.VIN, newMileage, newPrice, newRepairCost, newTotalInvested,
-    deals, badgeText, historyText, statsLines, deltas, verdict, lessons
+    deals, badgeText, historyText, statsLines, deltas: [], verdict, lessons
   };
 }
 
 function exportComparePdf(){
   if(!lastCompare){
-    setCompareStatus('Run a comparison first, then export it.', 'err');
+    alert('Please decode a VIN and run a comparison first.');
     return;
   }
   const c = lastCompare;
-
   const currentBlock = `
-    <div class="print-section">Car considered</div>
+    <div class="print-section">Prospective Vehicle</div>
     <div class="print-row"><span>Vehicle</span><span>${c.title || '—'}</span></div>
     <div class="print-row"><span>VIN</span><span>${c.vin || '—'}</span></div>
     <div class="print-row"><span>Mileage</span><span>${fmtNum(c.newMileage)}</span></div>
-    <div class="print-row"><span>Asking price</span><span>${fmtMoney(c.newPrice)}</span></div>
-    <div class="print-row"><span>Estimated repairs</span><span>${fmtMoney(c.newRepairCost)}</span></div>
-    <div class="print-row"><span>Estimated total investment</span><span>${fmtMoney(c.newTotalInvested)}</span></div>
+    <div class="print-row"><span>Asking Price</span><span>${fmtMoney(c.newPrice)}</span></div>
+    <div class="print-row"><span>Estimated Repairs</span><span>${fmtMoney(c.newRepairCost)}</span></div>
+    <div class="print-row"><span>Est. Total Investment</span><span>${fmtMoney(c.newTotalInvested)}</span></div>
   `;
 
   const dealsBlock = c.deals.length ? c.deals.map(d => `
     <div class="print-section">${d.buyer ? d.buyer + "'s deal" : d.title}</div>
-    <div class="print-row"><span>Vehicle</span><span>${[d.vehicle.Year, d.vehicle.Make, d.vehicle.Model, d.vehicle.Trim].filter(Boolean).join(' ') || '—'}</span></div>
+    <div class="print-row"><span>Vehicle</span><span>${[d.vehicle.Year, d.vehicle.Make, d.vehicle.Model, d.vehicle.Trim].filter(Boolean).join(' ')}</span></div>
     <div class="print-row"><span>Mileage</span><span>${fmtNum(d.mileage)}</span></div>
-    <div class="print-row"><span>Purchase price</span><span>${fmtMoney(d.purchase)}</span></div>
+    <div class="print-row"><span>Purchase Price</span><span>${fmtMoney(d.purchase)}</span></div>
     <div class="print-row"><span>Repairs</span><span>${fmtMoney(d.repairCost)}</span></div>
-    <div class="print-row"><span>Total invested</span><span>${fmtMoney(d.totalInvested)}</span></div>
-    <div class="print-row"><span>Sale price</span><span>${fmtMoney(d.salePrice)}</span></div>
-    <div class="print-row"><span>Net profit</span><span>${d.netProfit == null ? '—' : (d.netProfit > 0 ? '+' : '') + fmtMoney(d.netProfit)}</span></div>
-    <div class="print-row"><span>Deal rating</span><span>${d.rating ? d.rating + '/5' : '—'}</span></div>
-    <div class="print-row"><span>Date saved</span><span>${new Date(d.savedAt).toLocaleDateString()}</span></div>
-  `).join('') : `<div class="print-section">Our previous deals</div><div class="print-row"><span>No saved deals on this model yet</span><span></span></div>`;
-
-  const summaryBlock = `
-    <div class="print-section">Comparison summary</div>
-    <div class="print-row"><span>${c.badgeText}</span><span></span></div>
-    <div class="print-row"><span>${c.historyText}</span><span></span></div>
-    ${c.statsLines.map(s => `<div class="print-row"><span>${s}</span><span></span></div>`).join('')}
-    ${c.deltas.length ? `<div class="print-row"><span>The car considered is ${c.deltas.join(', ')}.</span><span></span></div>` : ''}
-    ${c.verdict ? `<div class="print-row"><span>${c.verdict}</span><span></span></div>` : ''}
-  `;
-
-  const lessonsBlock = c.lessons.length ? `
-    <div class="print-section">What our friends learned</div>
-    ${c.lessons.map(d => `<div class="print-row"><span>${d.buyer || d.title}</span><span>${d.lessons}</span></div>`).join('')}
-  ` : '';
+    <div class="print-row"><span>Total Invested</span><span>${fmtMoney(d.totalInvested)}</span></div>
+    <div class="print-row"><span>Sale Price</span><span>${fmtMoney(d.salePrice)}</span></div>
+    <div class="print-row"><span>Net Profit</span><span>${d.netProfit == null ? '—' : (d.netProfit > 0 ? '+' : '') + fmtMoney(d.netProfit)}</span></div>
+    <div class="print-row"><span>Deal Rating</span><span>${d.rating ? d.rating + '/5' : '—'}</span></div>
+    <div class="print-row"><span>Date Saved</span><span>${new Date(d.savedAt).toLocaleDateString()}</span></div>
+  `).join('') : `<div class="print-section">Historical Comparison</div><div class="print-row"><span>No prior deals recorded on this model</span><span></span></div>`;
 
   document.getElementById('printArea').innerHTML = `
     <div class="print-page">
-      <div class="print-title">Comparing: ${c.title || 'Vehicle'}</div>
-      <div class="print-sub">Comparison exported ${new Date().toLocaleDateString()}</div>
+      <div class="print-title">DealTrace Valuation & History: ${c.title || 'Vehicle'}</div>
+      <div class="print-sub">Generated on ${new Date().toLocaleDateString()}</div>
       ${currentBlock}
       ${dealsBlock}
-      ${summaryBlock}
-      ${lessonsBlock}
     </div>
   `;
   window.print();
@@ -1347,21 +1788,20 @@ async function initAdminAuth() {
     if (!user) return;
     const bar = document.getElementById('adminBar');
     const emailLabel = document.getElementById('adminEmailLabel');
+    const avatar = document.getElementById('adminInitial');
     if (bar && emailLabel) {
       emailLabel.textContent = user.email;
-      bar.style.display = 'flex';
-    }
-  } else {
-    const bar = document.getElementById('adminBar');
-    const emailLabel = document.getElementById('adminEmailLabel');
-    if (bar && emailLabel) {
-      emailLabel.innerHTML = 'Supabase Auth unconfigured · <a href="login.html" style="color:var(--brass);text-decoration:underline;font-weight:600;">Setup & Login</a>';
+      if (avatar && user.email) {
+        avatar.textContent = user.email.charAt(0).toUpperCase();
+      }
       bar.style.display = 'flex';
     }
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  buildVehicleGrid();
+  buildOwnerGrid();
   initAdminAuth();
   loadSavedCarsForCompare();
 });
