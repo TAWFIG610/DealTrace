@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sign In — DealTrace Automotive Intelligence</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-<!-- Supabase JS SDK (Official CDN) -->
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<!-- Supabase JS SDK (Official CDN) & i18n -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-client.js"></script>
+<script src="i18n.js"></script>
 <style>
   :root {
     --bg-base: #0B0F17;
@@ -48,6 +49,77 @@
     justify-content: center;
     padding: 24px;
     overflow-x: hidden;
+    position: relative;
+  }
+
+  /* RTL Typography & Direction overrides */
+  [dir="rtl"] {
+    font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+    letter-spacing: 0 !important;
+  }
+
+  [dir="rtl"] .portal-pill {
+    letter-spacing: 0;
+  }
+
+  /* Top Bar with Language Selector */
+  .top-lang-bar {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    z-index: 50;
+  }
+
+  [dir="rtl"] .top-lang-bar {
+    right: auto;
+    left: 24px;
+  }
+
+  .lang-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 3px 6px;
+    backdrop-filter: blur(8px);
+  }
+
+  .lang-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+    margin: 0 4px;
+  }
+
+  .lang-option {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+
+  .lang-option:hover {
+    color: var(--text-primary);
+  }
+
+  .lang-option.active {
+    background: var(--accent);
+    color: #0F172A;
+    font-weight: 700;
+  }
+
+  .lang-sep {
+    width: 1px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.15);
   }
 
   .login-container {
@@ -57,7 +129,6 @@
     z-index: 10;
   }
 
-  /* Decorative Ambient Blur behind the card */
   .ambient-glow {
     position: absolute;
     top: -30px;
@@ -136,7 +207,7 @@
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 8px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: inherit;
   }
 
   .input-shell {
@@ -155,9 +226,14 @@
     transition: color 0.18s ease;
   }
 
+  [dir="rtl"] .input-icon {
+    left: auto;
+    right: 14px;
+  }
+
   .input-shell input {
     width: 100%;
-    font-family: 'Inter', sans-serif;
+    font-family: inherit;
     font-size: 14.5px;
     padding: 13px 14px 13px 44px;
     border: 1.5px solid var(--input-border);
@@ -167,8 +243,17 @@
     transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
+  [dir="rtl"] .input-shell input {
+    padding: 13px 44px 13px 14px;
+  }
+
   .input-shell.has-toggle input {
     padding-right: 46px;
+  }
+
+  [dir="rtl"] .input-shell.has-toggle input {
+    padding-right: 44px;
+    padding-left: 46px;
   }
 
   .input-shell input::placeholder {
@@ -200,6 +285,11 @@
     align-items: center;
     justify-content: center;
     transition: color 0.15s;
+  }
+
+  [dir="rtl"] .toggle-pwd {
+    right: auto;
+    left: 12px;
   }
 
   .toggle-pwd:hover {
@@ -244,7 +334,7 @@
     width: 100%;
     margin-top: 10px;
     padding: 14px 20px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: inherit;
     font-weight: 700;
     font-size: 15px;
     border: none;
@@ -264,10 +354,6 @@
     background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4);
-  }
-
-  .btn-submit:active {
-    transform: translateY(0);
   }
 
   .btn-submit:disabled {
@@ -316,6 +402,20 @@
 </head>
 <body>
 
+<!-- Language Switcher in Top Corner -->
+<div class="top-lang-bar">
+  <div class="lang-pill" role="group" aria-label="Language Selector">
+    <svg class="lang-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="2" y1="12" x2="22" y2="12"></line>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+    </svg>
+    <button type="button" class="lang-option active" data-lang="en" onclick="window.I18n.setLanguage('en')">EN</button>
+    <span class="lang-sep"></span>
+    <button type="button" class="lang-option" data-lang="ar" onclick="window.I18n.setLanguage('ar')">العربية</button>
+  </div>
+</div>
+
 <div class="login-container">
   <div class="ambient-glow"></div>
   <div class="login-card">
@@ -325,7 +425,7 @@
       <img src="assets/logo-dark.svg" alt="DealTrace" class="logo-img">
       <div class="portal-pill">
         <span class="portal-pill-dot"></span>
-        Dealership Admin Portal
+        <span data-i18n="login.badge">Dealership Admin Portal</span>
       </div>
     </div>
 
@@ -338,9 +438,9 @@
     <form id="loginForm" onsubmit="handleLogin(event)">
       
       <div class="form-group">
-        <label for="email">Admin Email</label>
+        <label for="email" data-i18n="login.label_email">Admin Email</label>
         <div class="input-shell">
-          <input type="email" id="email" required placeholder="admin@dealership.com" autocomplete="email" autofocus>
+          <input type="email" id="email" required placeholder="admin@dealership.com" data-i18n-ph="login.ph_email" autocomplete="email" autofocus>
           <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect width="20" height="16" x="2" y="4" rx="2"></rect>
             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
@@ -349,9 +449,9 @@
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
+        <label for="password" data-i18n="login.label_password">Password</label>
         <div class="input-shell has-toggle">
-          <input type="password" id="password" required placeholder="••••••••••••" autocomplete="current-password">
+          <input type="password" id="password" required placeholder="••••••••••••" data-i18n-ph="login.ph_password" autocomplete="current-password">
           <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -367,7 +467,7 @@
 
       <button type="submit" id="loginBtn" class="btn-submit">
         <span class="spinner"></span>
-        <span id="btnText">Sign In to DealTrace</span>
+        <span id="btnText" data-i18n="login.btn_submit">Sign In to DealTrace</span>
       </button>
 
     </form>
@@ -377,7 +477,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
       </svg>
-      <span>Secured by Supabase Cloud 256-bit Encryption</span>
+      <span data-i18n="login.security_note">Secured by Supabase Cloud 256-bit Encryption</span>
     </div>
 
   </div>
@@ -412,7 +512,7 @@
     try {
       const session = await window.SupabaseAuth.getAdminSession();
       if (session && session.user) {
-        showStatus('Authenticated as admin (' + session.user.email + '). Redirecting…', 'ok');
+        showStatus(window.I18n.t('login.success'), 'ok');
         setTimeout(() => {
           window.location.replace('add-car.html');
         }, 600);
@@ -433,25 +533,27 @@
 
     btn.disabled = true;
     btn.classList.add('loading');
-    btnText.textContent = 'Verifying Credentials…';
+    btnText.textContent = window.I18n.t('login.btn_verifying');
 
     try {
       await window.SupabaseAuth.signInAdmin(email, password);
-      showStatus('Access authorized. Welcome to DealTrace!', 'ok');
+      showStatus(window.I18n.t('login.success'), 'ok');
       setTimeout(() => {
         window.location.replace('add-car.html');
       }, 600);
     } catch (err) {
       console.error('Sign in error:', err);
-      let message = err.message || 'Login failed. Please check your credentials.';
+      let message = err.message || '';
       if (message.includes('Invalid login credentials')) {
-        message = 'Incorrect email or password. Please verify your Supabase Auth account.';
+        message = window.I18n.t('login.err_credentials');
+      } else {
+        message = window.I18n.t('login.err_generic');
       }
       showStatus(message, 'err');
     } finally {
       btn.disabled = false;
       btn.classList.remove('loading');
-      btnText.textContent = 'Sign In to DealTrace';
+      btnText.textContent = window.I18n.t('login.btn_submit');
     }
   }
 

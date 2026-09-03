@@ -5,12 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DealTrace — Automotive Valuation Intelligence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700&family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
   <!-- Supabase JS SDK & Auth Layer -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-client.js"></script>
   <script>
+    function applySavedLang() {
+      const saved = localStorage.getItem('dealtrace_lang');
+      if (saved === 'ar' || (!saved && (navigator.language || '').toLowerCase().startsWith('ar'))) {
+        document.documentElement.lang = 'ar';
+        document.documentElement.dir = 'rtl';
+        const txt = document.getElementById('initText');
+        if (txt) txt.textContent = 'جاري تهيئة مساحة العمل…';
+      }
+    }
+
     async function checkAuthAndRedirect() {
+      applySavedLang();
       try {
         if (window.SupabaseAuth) {
           const session = await window.SupabaseAuth.getAdminSession();
@@ -42,6 +53,9 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+    }
+    [dir="rtl"] {
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
     }
     .splash-card {
       display: flex;
@@ -88,7 +102,7 @@
     <img src="assets/logo-dark.svg" alt="DealTrace" class="logo-img">
     <div class="loader-wrap">
       <div class="spinner"></div>
-      <span class="status-text">Initializing workspace…</span>
+      <span class="status-text" id="initText">Initializing workspace…</span>
     </div>
   </div>
 </body>
