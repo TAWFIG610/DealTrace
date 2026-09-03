@@ -2020,7 +2020,12 @@ async function deleteCar(id){
     await searchByBuyer();
     await loadSavedCarsForCompare();
   } catch(err) {
-    alert('Error deleting deal from Supabase: ' + err.message);
+    console.error('Error deleting deal:', err);
+    const note = document.getElementById('savedNote');
+    if(note) {
+      note.textContent = '✕ ' + (window.I18n && window.I18n.getLanguage() === 'ar' ? 'حدث خطأ أثناء حذف الصفقة: ' : 'Error deleting deal: ') + (err.message || err);
+      note.className = 'status-box err show';
+    }
   }
 }
 
@@ -2700,7 +2705,7 @@ function renderComparison(){
 
 function exportComparePdf(){
   if(!lastCompare){
-    alert(window.I18n && window.I18n.getLanguage() === 'ar' ? 'يرجى فك تشفير رقم الشاسيه وتنفيذ المقارنة أولاً.' : 'Please decode a VIN and run a comparison first.');
+    setCompareStatus(window.I18n && window.I18n.getLanguage() === 'ar' ? 'يرجى فك تشفير رقم الشاسيه وتنفيذ المقارنة أولاً.' : 'Please decode a VIN and run a comparison first.', 'err');
     return;
   }
   const c = lastCompare;

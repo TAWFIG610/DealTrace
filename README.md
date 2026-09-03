@@ -25,7 +25,8 @@ DealTrace is a production automotive deal tracking and historical valuation comp
 │   └── logo-dark.svg         # Dark mode DealTrace vector logo
 ├── index.html                # Intelligent root entry router with auth check
 ├── login.html                # Executive dark glass admin authentication portal
-├── add-car.html              # Core deal intelligence workspace (Compare, Add, Find)
+├── add-car.html              # Core deal workspace (Compare, Add, Find, Saved Deals)
+├── i18n.js                   # Bilingual Arabic (RTL) & English (LTR) localization engine
 ├── supabase-client.js        # Supabase client SDK integration & CRUD operations
 ├── schema.sql                # Complete PostgreSQL migration schema, RLS, & storage bucket
 ├── vercel.json               # Vercel production routing configuration

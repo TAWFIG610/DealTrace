@@ -7,6 +7,8 @@ DealTrace provides an automotive intelligence workspace for dealership teams and
 3. **Automated Historical Valuation**: Benchmarking prospective vehicle deals against historical transactions of the same Year, Make, and Model.
 4. **Data-Driven Risk & Profit Scoring**: Side-by-side comparison matrix with color-coded delta metrics, risk verdicts, and institutional team watchouts/lessons learned.
 5. **PDF Valuation Exporting**: Instant print and PDF generation for single vehicles or comparative dealer reports.
+6. **Bilingual Localization (Arabic & English)**: Full dual-language system paired with Google Fonts `Cairo` and RTL layout mirroring.
+7. **Saved Deals Admin Inspector**: Dedicated inventory KPI dashboard and modal inspector displaying all stored database fields.
 
 ---
 
