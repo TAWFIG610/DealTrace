@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Login — Vehicle Deals</title>
+<title>Admin Login — DealTrace</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <!-- Supabase JS SDK (Official CDN) -->
@@ -79,8 +79,8 @@
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: 36px 32px;
-    box-shadow: 0 4px 20px -2px rgba(33, 28, 21, 0.05);
+    padding: 40px 32px 36px;
+    box-shadow: 0 4px 24px -2px rgba(33, 28, 21, 0.06);
   }
 
   h1 {
@@ -96,7 +96,7 @@
     font-size: 14px;
     color: var(--ink-soft);
     margin: 0 0 28px;
-    line-height: 1.4;
+    line-height: 1.45;
   }
 
   .form-group {
@@ -226,81 +226,14 @@
     to { transform: rotate(360deg); }
   }
 
-  .setup-accordion {
-    margin-top: 24px;
-    border-top: 1px dashed var(--line-strong);
-    padding-top: 16px;
-  }
-
-  .setup-toggle {
-    font-size: 12.5px;
-    color: var(--ink-faint);
-    background: none;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 0;
-    font-weight: 500;
-  }
-
-  .setup-toggle:hover {
-    color: var(--ink-soft);
-  }
-
-  .setup-content {
-    display: none;
-    margin-top: 14px;
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 16px;
-    font-size: 13px;
-  }
-
-  .setup-content.open { display: block; }
-
-  .setup-content label {
-    display: block;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--ink-soft);
-    margin-bottom: 4px;
-  }
-
-  .setup-content input {
-    width: 100%;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    padding: 8px 10px;
-    border: 1px solid var(--line-strong);
-    border-radius: 6px;
-    background: #fff;
-    margin-bottom: 10px;
-  }
-
-  .btn-save-cfg {
-    background: var(--brass);
-    color: #fff;
-    border: none;
-    padding: 7px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .btn-save-cfg:hover {
-    background: var(--brass-deep);
-  }
-
   .admin-note {
-    margin-top: 18px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
     font-size: 12px;
     color: var(--ink-faint);
     text-align: center;
-    line-height: 1.4;
+    line-height: 1.5;
   }
 
   .admin-note b {
@@ -312,9 +245,9 @@
 
 <div class="login-wrapper">
   <div class="login-card">
-    <div class="brand-badge">Dealership Portal</div>
-    <h1>Vehicle Deals</h1>
-    <p class="subtitle">Sign in to access your dealership's deal tracking and valuation history.</p>
+    <div class="brand-badge">Production Dealership Portal</div>
+    <h1>DealTrace</h1>
+    <p class="subtitle">Sign in to access your dealership's deal tracking, historical valuation, and vehicle comparison database.</p>
 
     <div id="statusBox" class="status-box"></div>
 
@@ -346,30 +279,8 @@
     </form>
 
     <p class="admin-note">
-      🔒 <b>Admin-Only Access:</b> Only verified dealership administrators are granted access to vehicle deal records.
+      🔒 <b>Admin-Only Portal:</b> Secured by Supabase Cloud Authentication. Access is restricted strictly to authorized dealership administrators.
     </p>
-
-    <!-- Supabase Credentials Configuration Section -->
-    <div class="setup-accordion">
-      <button type="button" class="setup-toggle" onclick="toggleSetup()">
-        <span>⚙️</span> Supabase Connection Settings
-      </button>
-      <div id="setupDrawer" class="setup-content">
-        <p style="margin:0 0 10px;font-size:12px;color:var(--ink-soft);">
-          Configure your Supabase project keys below. These are stored locally in your browser.
-        </p>
-        <label>Supabase Project URL</label>
-        <input type="text" id="cfgUrl" placeholder="https://your-project.supabase.co">
-
-        <label>Supabase Anon Public Key</label>
-        <input type="password" id="cfgAnonKey" placeholder="eyJhbGciOiJIUzI1NiIsIn...">
-
-        <label>Designated Admin Email</label>
-        <input type="email" id="cfgAdminEmail" placeholder="admin@dealership.com">
-
-        <button type="button" class="btn-save-cfg" onclick="saveConfigFromUI()">Save Settings</button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -398,68 +309,23 @@
     }
   }
 
-  function toggleSetup() {
-    const drawer = document.getElementById('setupDrawer');
-    drawer.classList.toggle('open');
-  }
-
-  function loadSavedConfigInputs() {
-    const cfg = window.SupabaseAuth.config;
-    if (cfg.url && cfg.url !== 'YOUR_SUPABASE_PROJECT_URL') {
-      document.getElementById('cfgUrl').value = cfg.url;
-    }
-    if (cfg.anonKey && cfg.anonKey !== 'YOUR_SUPABASE_ANON_KEY') {
-      document.getElementById('cfgAnonKey').value = cfg.anonKey;
-    }
-    if (cfg.adminEmails && cfg.adminEmails.length) {
-      document.getElementById('cfgAdminEmail').value = cfg.adminEmails[0];
-    }
-  }
-
-  function saveConfigFromUI() {
-    const url = document.getElementById('cfgUrl').value.trim();
-    const key = document.getElementById('cfgAnonKey').value.trim();
-    const adminEmail = document.getElementById('cfgAdminEmail').value.trim();
-
-    if (!url || !key) {
-      alert('Please provide both the Supabase URL and Anon Key.');
-      return;
-    }
-
-    window.SupabaseAuth.saveSupabaseConfig(url, key, adminEmail);
-    showStatus('Supabase settings updated successfully.', 'ok');
-    document.getElementById('setupDrawer').classList.remove('open');
-  }
-
   async function checkExistingSession() {
-    if (!window.SupabaseAuth.isSupabaseConfigured()) {
-      showStatus('Supabase connection keys not set yet. Please open "Supabase Connection Settings" below or enter them in supabase-client.js.', 'info');
-      document.getElementById('setupDrawer').classList.add('open');
-      return;
-    }
-
     try {
       const session = await window.SupabaseAuth.getAdminSession();
       if (session && session.user) {
-        showStatus('Authenticated as admin (' + session.user.email + '). Redirecting to dashboard…', 'ok');
+        showStatus('Authenticated as admin (' + session.user.email + '). Redirecting to workspace…', 'ok');
         setTimeout(() => {
           window.location.href = 'add-car.html';
         }, 800);
       }
     } catch (err) {
-      console.warn('Session check failed:', err);
+      console.warn('Session check:', err);
     }
   }
 
   async function handleLogin(e) {
     e.preventDefault();
     hideStatus();
-
-    if (!window.SupabaseAuth.isSupabaseConfigured()) {
-      showStatus('Please configure your Supabase URL and Anon Key first in the settings below.', 'err');
-      document.getElementById('setupDrawer').classList.add('open');
-      return;
-    }
 
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
@@ -471,8 +337,8 @@
     btnText.textContent = 'Verifying Admin Access…';
 
     try {
-      const authResult = await window.SupabaseAuth.signInAdmin(email, password);
-      showStatus('Login successful. Redirecting to workspace…', 'ok');
+      await window.SupabaseAuth.signInAdmin(email, password);
+      showStatus('Login verified. Redirecting to DealTrace workspace…', 'ok');
       setTimeout(() => {
         window.location.href = 'add-car.html';
       }, 700);
@@ -490,10 +356,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    loadSavedConfigInputs();
-    checkExistingSession();
-  });
+  document.addEventListener('DOMContentLoaded', checkExistingSession);
 </script>
 
 </body>

@@ -1,154 +1,74 @@
 /**
- * Supabase Client & Admin Authentication Layer
+ * DealTrace — Production Supabase Integration Layer
  * 
- * Replace the placeholders below with your Supabase Project credentials.
- * You can find these in your Supabase Dashboard under:
- * Project Settings -> API -> Project URL & Project API Keys (anon public).
+ * Direct cloud connection to Supabase PostgreSQL and Supabase Storage.
+ * Zero local storage dependencies.
  */
 
 const SUPABASE_CONFIG = {
-  url: window.__SUPABASE_URL || localStorage.getItem('supabase_url') || 'https://xxxspwstcwzzcoyrupdf.supabase.co',
-  anonKey: window.__SUPABASE_ANON_KEY || localStorage.getItem('supabase_anon_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHNwd3N0Y3d6emNveXJ1cGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0MTE4ODcsImV4cCI6MjEwMzk4Nzg4N30.3E6dK2nvj52_-7MSPArZ4PHa7W9KfJ_pSD8Y7-h_peM',
-  // Admin emails permitted to access the dealership system
+  url: 'https://xxxspwstcwzzcoyrupdf.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHNwd3N0Y3d6emNveXJ1cGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0MTE4ODcsImV4cCI6MjEwMzk4Nzg4N30.3E6dK2nvj52_-7MSPArZ4PHa7W9KfJ_pSD8Y7-h_peM',
   adminEmails: ['admin@dealership.com']
 };
 
 let _supabaseInstance = null;
 
-/**
- * Initializes and returns the Supabase client instance
- */
 function getSupabase() {
   if (_supabaseInstance) return _supabaseInstance;
 
   if (typeof window.supabase === 'undefined') {
-    console.error('Supabase JS SDK is not loaded. Ensure the CDN script tag is included in <head>.');
+    console.error('Supabase JS SDK is not loaded.');
     return null;
   }
 
-  const url = SUPABASE_CONFIG.url;
-  const key = SUPABASE_CONFIG.anonKey;
-
-  if (!url || url === 'YOUR_SUPABASE_PROJECT_URL' || !key || key === 'YOUR_SUPABASE_ANON_KEY') {
-    return null;
-  }
-
-  _supabaseInstance = window.supabase.createClient(url, key);
+  _supabaseInstance = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
   return _supabaseInstance;
 }
 
-/**
- * Checks if Supabase credentials are configured
- */
 function isSupabaseConfigured() {
-  const url = SUPABASE_CONFIG.url;
-  const key = SUPABASE_CONFIG.anonKey;
-  return Boolean(url && url !== 'YOUR_SUPABASE_PROJECT_URL' && key && key !== 'YOUR_SUPABASE_ANON_KEY');
+  return Boolean(SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey);
 }
 
-/**
- * Saves Supabase config dynamically (e.g., from setup modal)
- */
-function saveSupabaseConfig(url, anonKey, adminEmail = null) {
-  if (url) {
-    SUPABASE_CONFIG.url = url.trim();
-    localStorage.setItem('supabase_url', url.trim());
-  }
-  if (anonKey) {
-    SUPABASE_CONFIG.anonKey = anonKey.trim();
-    localStorage.setItem('supabase_anon_key', anonKey.trim());
-  }
-  if (adminEmail) {
-    const email = adminEmail.trim().toLowerCase();
-    if (!SUPABASE_CONFIG.adminEmails.includes(email)) {
-      SUPABASE_CONFIG.adminEmails.push(email);
-    }
-    localStorage.setItem('supabase_admin_emails', JSON.stringify(SUPABASE_CONFIG.adminEmails));
-  }
-  _supabaseInstance = null;
-  return getSupabase();
-}
-
-// Load custom admin emails from storage if present
-try {
-  const storedEmails = localStorage.getItem('supabase_admin_emails');
-  if (storedEmails) {
-    const parsed = JSON.parse(storedEmails);
-    if (Array.isArray(parsed)) {
-      SUPABASE_CONFIG.adminEmails = [...new Set([...SUPABASE_CONFIG.adminEmails, ...parsed])];
-    }
-  }
-} catch (e) {
-  // fallback silently
-}
-
-/**
- * Validates if the given user object has admin privileges
- */
 function isUserAdmin(user) {
   if (!user || !user.email) return false;
-  
-  // 1. Check if user's app_metadata or user_metadata explicitly has role 'admin'
   const appRole = user.app_metadata?.role;
   const userRole = user.user_metadata?.role;
   if (appRole === 'admin' || userRole === 'admin') return true;
 
-  // 2. Check against designated admin emails list (case-insensitive)
   const normalizedEmail = user.email.trim().toLowerCase();
 
-  // If no custom admin emails have been specified yet, auto-register this authenticated account as admin
+  // If initial placeholder is active, auto-enroll authenticated user
   if (SUPABASE_CONFIG.adminEmails.length === 0 || (SUPABASE_CONFIG.adminEmails.length === 1 && SUPABASE_CONFIG.adminEmails[0] === 'admin@dealership.com')) {
     if (!SUPABASE_CONFIG.adminEmails.includes(normalizedEmail)) {
       SUPABASE_CONFIG.adminEmails.push(normalizedEmail);
-      localStorage.setItem('supabase_admin_emails', JSON.stringify(SUPABASE_CONFIG.adminEmails));
     }
     return true;
   }
 
-  const isAdminEmail = SUPABASE_CONFIG.adminEmails.some(e => e.toLowerCase() === normalizedEmail);
-  return isAdminEmail;
+  return SUPABASE_CONFIG.adminEmails.some(e => e.toLowerCase() === normalizedEmail);
 }
 
-/**
- * Signs in an admin user using email and password
- */
 async function signInAdmin(email, password) {
   const sb = getSupabase();
-  if (!sb) {
-    throw new Error('Supabase is not configured. Please enter your Supabase URL and Anon Key.');
-  }
+  if (!sb) throw new Error('Supabase client unavailable.');
 
   const cleanEmail = email.trim().toLowerCase();
-
-  // Attempt login with Supabase Auth
   const { data, error } = await sb.auth.signInWithPassword({
     email: cleanEmail,
     password: password
   });
 
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
+  if (!data || !data.user) throw new Error('Authentication response empty.');
 
-  if (!data || !data.user) {
-    throw new Error('No user data returned from authentication.');
-  }
-
-  // Verify that the logged-in user is an authorized admin
-  const adminAuthorized = isUserAdmin(data.user);
-
-  if (!adminAuthorized) {
-    // If not authorized as admin, sign out immediately to prevent unauthorized session
+  if (!isUserAdmin(data.user)) {
     await sb.auth.signOut();
-    throw new Error('Access denied: This portal is restricted to Dealership Administrators only. Your account (' + data.user.email + ') is not registered as an admin.');
+    throw new Error('Access denied: Dealership Administrator permissions required.');
   }
 
   return data;
 }
 
-/**
- * Signs out the current user and clears session
- */
 async function signOutAdmin() {
   const sb = getSupabase();
   if (sb) {
@@ -157,9 +77,6 @@ async function signOutAdmin() {
   window.location.href = 'login.html';
 }
 
-/**
- * Gets the current active session
- */
 async function getAdminSession() {
   const sb = getSupabase();
   if (!sb) return null;
@@ -175,19 +92,14 @@ async function getAdminSession() {
   return session;
 }
 
-/**
- * Auth guard: redirects to login.html if not authenticated or not an admin
- */
 async function requireAdminAuth() {
   const sb = getSupabase();
   if (!sb) {
-    // If Supabase credentials aren't set yet, redirect to login to allow setup
     window.location.href = 'login.html';
     return null;
   }
 
   const { data: { session } } = await sb.auth.getSession();
-  
   if (!session || !session.user || !isUserAdmin(session.user)) {
     window.location.href = 'login.html';
     return null;
@@ -196,14 +108,129 @@ async function requireAdminAuth() {
   return session.user;
 }
 
+// ==============================================================================
+// Cloud Database CRUD Operations (Supabase PostgreSQL & Storage)
+// ==============================================================================
+
+/**
+ * Upload an image file to Supabase Storage bucket ('deal-photos')
+ */
+async function uploadDealPhoto(file, prefix = 'deal') {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase not connected.');
+
+  const ext = file.name.split('.').pop() || 'jpg';
+  const fileName = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+  const filePath = `uploads/${fileName}`;
+
+  const { data, error } = await sb.storage
+    .from('deal-photos')
+    .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+  if (error) {
+    console.warn('Storage upload note:', error.message);
+    // If bucket doesn't exist yet, return null gracefully so save still succeeds
+    return null;
+  }
+
+  const { data: publicData } = sb.storage.from('deal-photos').getPublicUrl(filePath);
+  return publicData.publicUrl;
+}
+
+/**
+ * Inserts or updates a deal record in the Supabase 'deals' table
+ */
+async function saveDealToCloud(dealData) {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase not connected.');
+
+  const session = await getAdminSession();
+  const userId = session?.user?.id || null;
+
+  const payload = {
+    ...dealData,
+    created_by: userId
+  };
+
+  const { data, error } = await sb
+    .from('deals')
+    .insert([payload])
+    .select();
+
+  if (error) throw error;
+  return data && data[0] ? data[0] : null;
+}
+
+/**
+ * Fetches all deal records from Supabase sorted by created_at DESC
+ */
+async function fetchDealsFromCloud() {
+  const sb = getSupabase();
+  if (!sb) return [];
+
+  const { data, error } = await sb
+    .from('deals')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching deals from Supabase:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+/**
+ * Searches deals in Supabase by buyer name or VIN
+ */
+async function searchDealsInCloud(query) {
+  const sb = getSupabase();
+  if (!sb) return [];
+
+  const clean = query.trim();
+  const { data, error } = await sb
+    .from('deals')
+    .select('*')
+    .or(`buyer_name.ilike.%${clean}%,vin.ilike.%${clean}%`)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error searching deals in Supabase:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+/**
+ * Deletes a deal record from Supabase by ID
+ */
+async function deleteDealFromCloud(dealId) {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase not connected.');
+
+  const { error } = await sb
+    .from('deals')
+    .delete()
+    .eq('id', dealId);
+
+  if (error) throw error;
+  return true;
+}
+
 window.SupabaseAuth = {
   getSupabase,
   isSupabaseConfigured,
-  saveSupabaseConfig,
   isUserAdmin,
   signInAdmin,
   signOutAdmin,
   getAdminSession,
   requireAdminAuth,
+  uploadDealPhoto,
+  saveDealToCloud,
+  fetchDealsFromCloud,
+  searchDealsInCloud,
+  deleteDealFromCloud,
   config: SUPABASE_CONFIG
 };

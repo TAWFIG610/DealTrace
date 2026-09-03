@@ -440,7 +440,7 @@
         <span class="select-all" onclick="toggleSelectAll()">Select all</span>
         <button class="btn-export-selected" id="exportSelectedBtn" onclick="exportSelectedToPdf()" disabled>Export selected to PDF</button>
       </div>
-      <p class="storage-note" id="storageNote"></p>
+      <p class="storage-note" id="storageNote">☁️ Deals are synchronized live with your Supabase PostgreSQL cloud database.</p>
     </div>
   </div>
 </div>
@@ -661,7 +661,7 @@ function addPhotoFiles(files){
     photoCount++;
     const id = photoCount;
     reader.onload = (e) => {
-      photos.push({id, name: file.name, dataUrl: e.target.result});
+      photos.push({id, name: file.name, file: file, dataUrl: e.target.result});
       renderPhotoGallery();
     };
     reader.readAsDataURL(file);
@@ -717,40 +717,55 @@ function addCustomField(label, value){
   wrap.appendChild(row);
 }
 
-// --- Storage layer: uses Claude's artifact storage when available, falls back to localStorage ---
-const hasClaudeStorage = typeof window.storage !== 'undefined';
+function formatDealForPrint(c) {
+  const title = [c.year, c.make, c.model, c.trim].filter(Boolean).join(' ') || c.title || 'Vehicle record';
+  const v = c.record ? c.record.vehicle || {} : {};
+  const r = c.record ? c.record.records || {} : {};
+  const photoList = Array.isArray(c.photos)
+    ? c.photos.map(p => ({ dataUrl: p.url || p.dataUrl, name: p.name || 'Photo' }))
+    : (c.photos || []);
 
-async function storeGet(key){
-  if(hasClaudeStorage){
-    try{ const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; }
-    catch(e){ return null; }
-  }
-  const raw = localStorage.getItem(key);
-  return raw ? JSON.parse(raw) : null;
+  return {
+    title,
+    photos: photoList,
+    record: {
+      vehicle: {
+        'VIN': c.vin || v.VIN || '',
+        'Year': c.year || v.Year || '',
+        'Make': c.make || v.Make || '',
+        'Model': c.model || v.Model || '',
+        'Trim': c.trim || v.Trim || '',
+        'Engine': c.engine || v.Engine || '',
+        'Transmission': c.transmission || v.Transmission || '',
+        'Body type': c.body_type || v['Body type'] || '',
+        'Drive type': c.drive_type || v['Drive type'] || '',
+        'Fuel type': c.fuel_type || v['Fuel type'] || '',
+        'Exterior color': c.exterior_color || v['Exterior color'] || ''
+      },
+      records: {
+        'Status': c.status || r['Status'] || '',
+        'Buyer': c.buyer_name || c.buyerName || r['Buyer'] || '',
+        'Purchase price': c.purchase_price != null ? '$' + c.purchase_price : (r['Purchase price'] || ''),
+        'Purchase state': c.purchase_state || r['Purchase state'] || '',
+        'Purchase date': c.purchase_date || r['Purchase date'] || '',
+        'Mileage at purchase': c.mileage != null ? c.mileage.toLocaleString() : (r['Mileage at purchase'] || ''),
+        'Condition': c.condition || r['Condition'] || '',
+        'Seller': c.seller || r['Seller'] || '',
+        'Location': c.location || r['Location'] || '',
+        'Title status': c.title_status || r['Title status'] || '',
+        'Repair notes': c.repair_notes || r['Repair notes'] || '',
+        'Repair cost': c.repair_cost != null ? '$' + c.repair_cost : (r['Repair cost'] || ''),
+        'Other costs': c.other_costs != null ? '$' + c.other_costs : (r['Other costs'] || ''),
+        'Sale info': c.sale_info || r['Sale information'] || '',
+        'Sale price': c.sale_price != null ? '$' + c.sale_price : (r['Sale price'] || ''),
+        'Deal rating': c.deal_rating ? c.deal_rating + '/5' : (r['Deal rating'] ? r['Deal rating'] + '/5' : ''),
+        'What we learned': c.lessons_learned || r['What we learned'] || '',
+        'Notes': c.notes || r['Notes'] || ''
+      },
+      custom: c.custom_fields || c.custom || {}
+    }
+  };
 }
-async function storeSet(key, value){
-  if(hasClaudeStorage){
-    try{ await window.storage.set(key, JSON.stringify(value)); return; }
-    catch(e){ /* fall through */ }
-  }
-  localStorage.setItem(key, JSON.stringify(value));
-}
-async function storeDelete(key){
-  if(hasClaudeStorage){
-    try{ await window.storage.delete(key); return; }
-    catch(e){ /* fall through */ }
-  }
-  localStorage.removeItem(key);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  const note = document.getElementById('storageNote');
-  if(note){
-    note.textContent = hasClaudeStorage
-      ? 'Saved deals persist here in Claude.'
-      : 'Saved deals are stored in this browser only — they won\'t follow you to another device.';
-  }
-});
 
 function getRecord(){
   const record = {vehicle: {}, photos: {}, records: {}, custom: {}};
@@ -783,24 +798,88 @@ function getRecord(){
 }
 
 async function saveCar(){
+  const saveBtn = document.querySelector('.btn-save');
+  const origBtnText = saveBtn ? saveBtn.textContent : 'Save deal';
+  if(saveBtn){
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving to Supabase Cloud…';
+  }
+
   const record = getRecord();
-  const out = document.getElementById('output');
-  out.textContent = JSON.stringify(record, null, 2);
-  out.className = 'output show';
-  const note = document.getElementById('savedNote');
-  note.className = 'saved-note show';
 
-  const id = 'car_' + Date.now();
-  const title = [record.vehicle['Year'], record.vehicle['Make'], record.vehicle['Model'], record.vehicle['Trim']].filter(Boolean).join(' ') || 'Vehicle record';
-  const buyerName = record.records['Buyer'] || '';
-  const vin = record.vehicle['VIN'] || '';
-  const stored = {id, title, buyerName, vin, savedAt: new Date().toISOString(), record, photos: photos.slice(0,3)};
+  // Upload photos to Supabase Storage bucket ('deal-photos')
+  const uploadedPhotos = [];
+  for(const p of photos){
+    if(p.file && window.SupabaseAuth){
+      try {
+        const publicUrl = await window.SupabaseAuth.uploadDealPhoto(p.file, 'deal');
+        uploadedPhotos.push({ name: p.name, url: publicUrl || p.dataUrl });
+      } catch(e) {
+        uploadedPhotos.push({ name: p.name, url: p.dataUrl });
+      }
+    } else {
+      uploadedPhotos.push({ name: p.name, url: p.dataUrl });
+    }
+  }
 
-  await storeSet(id, stored);
-  const index = (await storeGet('carIndex')) || [];
-  index.push(id);
-  await storeSet('carIndex', index);
-  await loadSavedCarsForCompare();
+  const dealPayload = {
+    vin: record.vehicle['VIN'] || '',
+    year: record.vehicle['Year'] || '',
+    make: record.vehicle['Make'] || '',
+    model: record.vehicle['Model'] || '',
+    trim: record.vehicle['Trim'] || '',
+    engine: record.vehicle['Engine'] || '',
+    transmission: record.vehicle['Transmission'] || '',
+    body_type: record.vehicle['Body type'] || '',
+    drive_type: record.vehicle['Drive type'] || '',
+    fuel_type: record.vehicle['Fuel type'] || '',
+    exterior_color: record.vehicle['Exterior color'] || '',
+
+    status: record.records['Status'] || 'Owned',
+    buyer_name: record.records['Buyer'] || '',
+    purchase_price: toNumber(record.records['Purchase price']),
+    purchase_state: record.records['Purchase state'] || '',
+    purchase_date: record.records['Purchase date'] || null,
+    mileage: toNumber(record.records['Mileage at purchase']),
+    condition: record.records['Condition'] || '',
+    seller: record.records['Seller'] || '',
+    location: record.records['Location'] || '',
+    title_status: record.records['Title status'] || 'Clean',
+
+    repair_notes: record.records['Repair notes'] || '',
+    repair_cost: toNumber(record.records['Repair cost']) || 0,
+    other_costs: toNumber(record.records['Other costs']) || 0,
+    sale_info: record.records['Sale information'] || '',
+    sale_price: toNumber(record.records['Sale price']),
+    deal_rating: toNumber(record.records['Deal rating']),
+
+    lessons_learned: record.records['What we learned'] || '',
+    notes: record.records['Notes'] || '',
+
+    custom_fields: record.custom || {},
+    photos: uploadedPhotos
+  };
+
+  try {
+    const saved = await window.SupabaseAuth.saveDealToCloud(dealPayload);
+    const out = document.getElementById('output');
+    out.textContent = JSON.stringify(saved || dealPayload, null, 2);
+    out.className = 'output show';
+
+    const note = document.getElementById('savedNote');
+    note.textContent = '✓ Deal saved live to Supabase PostgreSQL database!';
+    note.className = 'saved-note show';
+
+    await loadSavedCarsForCompare();
+  } catch(err) {
+    console.error('Error saving deal to Supabase:', err);
+    alert('Failed to save to Supabase: ' + (err.message || err));
+  } finally {
+    if(saveBtn){
+      saveBtn.disabled = false;
+      saveBtn.textContent = origBtnText;
+    }
+  }
 }
 
 function buildPrintSections(entries){
@@ -811,7 +890,7 @@ function buildPrintSections(entries){
   return entries.map(({title, record, photos: p}) => {
     const capped = (p || []).slice(0, 6);
     const photoBlock = capped.length
-      ? `<div class="print-section">Photos</div><div class="print-photos">${capped.map(ph => `<img src="${ph.dataUrl}" alt="${ph.name}">`).join('')}</div>`
+      ? `<div class="print-section">Photos</div><div class="print-photos">${capped.map(ph => `<img src="${ph.dataUrl || ph.url}" alt="${ph.name}">`).join('')}</div>`
       : '';
     return `
       <div class="print-page">
@@ -833,7 +912,7 @@ function exportPdf(){
   window.print();
 }
 
-// --- Buyer search ---
+// --- Live Buyer Search (Supabase Cloud) ---
 let buyerMatches = [];
 
 async function searchByBuyer(){
@@ -848,42 +927,42 @@ async function searchByBuyer(){
     return;
   }
 
-  const index = (await storeGet('carIndex')) || [];
-  const all = await Promise.all(index.map(id => storeGet(id)));
-  buyerMatches = all.filter(c => c && (
-    (c.buyerName && c.buyerName.trim().toLowerCase() === query) ||
-    (c.vin && c.vin.toLowerCase().includes(query))
-  ));
+  buyerMatches = await window.SupabaseAuth.searchDealsInCloud(query);
 
   if(!buyerMatches.length){
-    resultsEl.innerHTML = '<div class="buyer-empty">No match — enter the buyer\'s full name exactly, or a VIN.</div>';
+    resultsEl.innerHTML = '<div class="buyer-empty">No match in cloud database — enter the buyer\'s full name or a VIN.</div>';
     actionsEl.style.display = 'none';
     return;
   }
 
   actionsEl.style.display = 'flex';
-  resultsEl.innerHTML = buyerMatches.map((c, i) => `
+  resultsEl.innerHTML = buyerMatches.map((c, i) => {
+    const title = [c.year, c.make, c.model, c.trim].filter(Boolean).join(' ') || 'Vehicle deal';
+    return `
     <div class="buyer-result">
       <label style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;">
         <input type="checkbox" class="buyer-check" data-idx="${i}" onchange="updateExportButton()">
         <div class="br-info">
-          <div class="br-title">${c.title}</div>
-          <div class="br-meta">${c.buyerName ? 'Buyer: ' + c.buyerName + ' · ' : ''}${c.vin ? 'VIN: ' + c.vin + ' · ' : ''}Saved ${new Date(c.savedAt).toLocaleDateString()}</div>
+          <div class="br-title">${title}</div>
+          <div class="br-meta">${c.buyer_name ? 'Buyer: ' + c.buyer_name + ' · ' : ''}${c.vin ? 'VIN: ' + c.vin + ' · ' : ''}Saved ${new Date(c.created_at).toLocaleDateString()}</div>
         </div>
       </label>
-      <button class="buyer-delete" onclick="deleteCar('${c.id}')" aria-label="Delete this car" title="Delete">×</button>
+      <button class="buyer-delete" onclick="deleteCar('${c.id}')" aria-label="Delete this car" title="Delete from Supabase">×</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
   updateExportButton();
 }
 
 async function deleteCar(id){
-  if(!confirm('Delete this car\'s saved data? This can\'t be undone.')) return;
-  await storeDelete(id);
-  const index = (await storeGet('carIndex')) || [];
-  await storeSet('carIndex', index.filter(i => i !== id));
-  await searchByBuyer();
-  await loadSavedCarsForCompare();
+  if(!confirm('Permanently delete this deal from Supabase? This cannot be undone.')) return;
+  try {
+    await window.SupabaseAuth.deleteDealFromCloud(id);
+    await searchByBuyer();
+    await loadSavedCarsForCompare();
+  } catch(err) {
+    alert('Error deleting deal from Supabase: ' + err.message);
+  }
 }
 
 function updateExportButton(){
@@ -899,22 +978,25 @@ function toggleSelectAll(){
 }
 
 function exportSelectedToPdf(){
-  const selected = [...document.querySelectorAll('.buyer-check:checked')].map(b => buyerMatches[+b.dataset.idx]);
+  const selected = [...document.querySelectorAll('.buyer-check:checked')].map(b => formatDealForPrint(buyerMatches[+b.dataset.idx]));
   if(!selected.length) return;
   document.getElementById('printArea').innerHTML = buildPrintSections(selected);
   window.print();
 }
 
-// ===================== COMPARE — the main feature =====================
+// ===================== COMPARE (Live Supabase Data) =====================
 let compareNewVehicle = {};
 let compareMatches = [];
 let allSavedCars = [];
 let lastCompare = null;
 
 async function loadSavedCarsForCompare(){
-  const index = (await storeGet('carIndex')) || [];
-  allSavedCars = (await Promise.all(index.map(id => storeGet(id)))).filter(Boolean);
-  allSavedCars.sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt));
+  try {
+    allSavedCars = await window.SupabaseAuth.fetchDealsFromCloud();
+  } catch(e) {
+    console.error('Error loading deals from Supabase:', e);
+    allSavedCars = [];
+  }
 }
 
 function setCompareStatus(msg, kind){
@@ -939,18 +1021,41 @@ function average(nums){
 }
 
 function dealMetrics(c){
-  const r = c.record.records || {};
-  const purchase = toNumber(r['Purchase price']);
-  const repairCost = toNumber(r['Repair cost']);
-  const otherCosts = toNumber(r['Other costs']);
-  const salePrice = toNumber(r['Sale price']);
-  const mileage = toNumber(r['Mileage at purchase']);
+  const purchase = toNumber(c.purchase_price);
+  const repairCost = toNumber(c.repair_cost);
+  const otherCosts = toNumber(c.other_costs);
+  const salePrice = toNumber(c.sale_price);
+  const mileage = toNumber(c.mileage);
   const totalInvested = purchase != null ? purchase + (repairCost || 0) + (otherCosts || 0) : null;
   const netProfit = (salePrice != null && totalInvested != null) ? salePrice - totalInvested : null;
+  const title = [c.year, c.make, c.model, c.trim].filter(Boolean).join(' ') || 'Vehicle deal';
+
   return {
-    id: c.id, title: c.title, buyer: c.buyerName || '', vehicle: c.record.vehicle || {},
-    purchase, repairCost, otherCosts, salePrice, mileage, totalInvested, netProfit,
-    rating: r['Deal rating'] || null, lessons: r['What we learned'] || '', savedAt: c.savedAt
+    id: c.id,
+    title: title,
+    buyer: c.buyer_name || '',
+    vehicle: {
+      VIN: c.vin || '',
+      Year: c.year || '',
+      Make: c.make || '',
+      Model: c.model || '',
+      Trim: c.trim || '',
+      Engine: c.engine || '',
+      Transmission: c.transmission || '',
+      'Body type': c.body_type || '',
+      'Drive type': c.drive_type || '',
+      'Fuel type': c.fuel_type || ''
+    },
+    purchase,
+    repairCost,
+    otherCosts,
+    salePrice,
+    mileage,
+    totalInvested,
+    netProfit,
+    rating: c.deal_rating || null,
+    lessons: c.lessons_learned || '',
+    savedAt: c.created_at
   };
 }
 
@@ -990,10 +1095,12 @@ async function decodeCompareVin(){
 
     await loadSavedCarsForCompare();
     compareMatches = allSavedCars.filter(c => {
-      const v = c.record.vehicle || {};
-      return norm(v.Year) === norm(compareNewVehicle.Year)
-        && norm(v.Make) === norm(compareNewVehicle.Make)
-        && norm(v.Model) === norm(compareNewVehicle.Model);
+      const yr = c.year || (c.record && c.record.vehicle ? c.record.vehicle.Year : '');
+      const mk = c.make || (c.record && c.record.vehicle ? c.record.vehicle.Make : '');
+      const md = c.model || (c.record && c.record.vehicle ? c.record.vehicle.Model : '');
+      return norm(yr) === norm(compareNewVehicle.Year)
+        && norm(mk) === norm(compareNewVehicle.Make)
+        && norm(md) === norm(compareNewVehicle.Model);
     });
 
     if(compareMatches.length){
