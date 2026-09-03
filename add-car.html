@@ -1433,34 +1433,46 @@ async function saveCar(){
     }
   }
 
-  const dealPayload = {
-    vin: record.vehicle['VIN'] || '',
-    year: record.vehicle['Year'] || '',
-    make: record.vehicle['Make'] || '',
-    model: record.vehicle['Model'] || '',
-    trim: record.vehicle['Trim'] || '',
-    engine: record.vehicle['Engine'] || '',
-    transmission: record.vehicle['Transmission'] || '',
-    body_type: record.vehicle['Body type'] || '',
-    drive_type: record.vehicle['Drive type'] || '',
-    fuel_type: record.vehicle['Fuel type'] || '',
-    exterior_color: record.vehicle['Exterior color'] || '',
+  function cleanStr(val, maxLen = 150) {
+    if (val === undefined || val === null) return '';
+    const s = String(val).trim();
+    return maxLen ? s.substring(0, maxLen) : s;
+  }
 
-    status: record.records['Status'] || 'Owned',
-    buyer_name: record.records['Buyer'] || '',
+  // Safe VIN sanitization: strip spaces/dashes and prevent > 17 char overflow
+  let cleanVin = (record.vehicle['VIN'] || '').toString().trim().replace(/[\s\-_]+/g, '').toUpperCase();
+  if (cleanVin.length > 17) {
+    cleanVin = cleanVin.substring(0, 17);
+  }
+
+  const dealPayload = {
+    vin: cleanVin,
+    year: cleanStr(record.vehicle['Year'], 10),
+    make: cleanStr(record.vehicle['Make'], 100),
+    model: cleanStr(record.vehicle['Model'], 100),
+    trim: cleanStr(record.vehicle['Trim'], 100),
+    engine: cleanStr(record.vehicle['Engine'], 150),
+    transmission: cleanStr(record.vehicle['Transmission'], 100),
+    body_type: cleanStr(record.vehicle['Body type'], 100),
+    drive_type: cleanStr(record.vehicle['Drive type'], 100),
+    fuel_type: cleanStr(record.vehicle['Fuel type'], 100),
+    exterior_color: cleanStr(record.vehicle['Exterior color'], 100),
+
+    status: cleanStr(record.records['Status'], 50) || 'Owned',
+    buyer_name: cleanStr(record.records['Buyer'], 150),
     purchase_price: toNumber(record.records['Purchase price'], 99999999),
-    purchase_state: record.records['Purchase state'] || '',
+    purchase_state: cleanStr(record.records['Purchase state'], 50),
     purchase_date: record.records['Purchase date'] || null,
     mileage: toNumber(record.records['Mileage at purchase'], 9999999),
-    condition: record.records['Condition'] || '',
-    seller: record.records['Seller'] || '',
-    location: record.records['Location'] || '',
-    title_status: record.records['Title status'] || 'Clean',
+    condition: cleanStr(record.records['Condition'], 100),
+    seller: cleanStr(record.records['Seller'], 150),
+    location: cleanStr(record.records['Location'], 150),
+    title_status: cleanStr(record.records['Title status'], 50) || 'Clean',
 
-    repair_notes: record.records['Repair notes'] || '',
+    repair_notes: cleanStr(record.records['Repair notes'], 1000),
     repair_cost: toNumber(record.records['Repair cost'], 99999999) || 0,
     other_costs: toNumber(record.records['Other costs'], 99999999) || 0,
-    sale_info: record.records['Sale information'] || '',
+    sale_info: cleanStr(record.records['Sale information'], 150),
     sale_price: toNumber(record.records['Sale price'], 99999999),
     deal_rating: Math.min(Math.max(toNumber(record.records['Deal rating']) || 0, 1), 5) || null,
 
@@ -1480,7 +1492,19 @@ async function saveCar(){
     await loadSavedCarsForCompare();
   } catch(err) {
     console.error('Save error:', err);
-    alert('Failed to save to Supabase: ' + (err.message || err));
+    const note = document.getElementById('savedNote');
+    let msg = err.message || String(err);
+    if (msg.includes('value too long') || msg.includes('character varying')) {
+      msg = window.I18n && window.I18n.getLanguage() === 'ar'
+        ? 'تنبيه: أحد النصوص المدخلة أطول من المسموح به. تم تقليص البيانات وتجهيزها للحفظ.'
+        : 'Notice: An input string exceeded maximum allowed characters.';
+    }
+    if (note) {
+      note.textContent = '✕ ' + msg;
+      note.className = 'status-box err show';
+    } else {
+      alert(msg);
+    }
   } finally {
     if(saveBtn){
       saveBtn.disabled = false;
