@@ -30,6 +30,20 @@ function fetchJson(url) {
   });
 }
 
+function sanitizeVin(raw) {
+  if (!raw) return '';
+  const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+  let s = raw.toString().trim().toUpperCase();
+  for (let i = 0; i < 10; i++) {
+    s = s.split(arabicDigits[i]).join(String(i));
+  }
+  s = s.replace(/[\s\-_.]+/g, '');
+  // Per ISO 3779 & US CFR Title 49 Part 565, modern VINs never contain letters I, O, or Q.
+  // Auto-correct common human transcription typos: O -> 0, I -> 1, Q -> 0
+  s = s.replace(/O/g, '0').replace(/I/g, '1').replace(/Q/g, '0');
+  return s;
+}
+
 module.exports = async function handler(req, res) {
   // Global CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -41,7 +55,7 @@ module.exports = async function handler(req, res) {
   }
 
   const rawVin = req.query && req.query.vin ? req.query.vin : '';
-  const vin = rawVin.toString().trim().toUpperCase().replace(/[\s\-_]+/g, '');
+  const vin = sanitizeVin(rawVin);
 
   if (!vin || vin.length !== 17) {
     return res.status(400).json({

@@ -1214,7 +1214,7 @@
       <p class="card-sub" data-i18n="cmp.card_sub">Paste the 17-character VIN to auto-decode factory specs and instantly compare against all past purchases of that model.</p>
 
       <div class="input-search-wrap">
-        <input type="text" id="compareVinInput" placeholder="ENTER 17-DIGIT VIN..." data-i18n-ph="cmp.ph_vin" maxlength="17" onkeydown="if(event.key==='Enter') decodeCompareVin()">
+        <input type="text" id="compareVinInput" placeholder="ENTER 17-DIGIT VIN..." data-i18n-ph="cmp.ph_vin" maxlength="25" oninput="this.value = sanitizeVin(this.value)" onkeydown="if(event.key==='Enter') decodeCompareVin()">
         <button class="btn-primary btn-accent" id="compareVinBtn" onclick="decodeCompareVin()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           <span data-i18n="cmp.btn_decode">Decode & Search</span>
@@ -1272,7 +1272,7 @@
       <p class="card-sub" data-i18n="add.vin_sub">Decode public NHTSA registry specs automatically, or describe the car manually.</p>
       
       <div class="input-search-wrap">
-        <input type="text" id="vinInput" placeholder="ENTER 17-CHARACTER VIN" data-i18n-ph="add.ph_vin_add" maxlength="17" onkeydown="if(event.key==='Enter') decodeVin()">
+        <input type="text" id="vinInput" placeholder="ENTER 17-CHARACTER VIN" data-i18n-ph="add.ph_vin_add" maxlength="25" oninput="this.value = sanitizeVin(this.value)" onkeydown="if(event.key==='Enter') decodeVin()">
         <button class="btn-primary" id="fillBtn" onclick="decodeVin()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 21h5v-5"></path></svg>
           <span data-i18n="add.btn_auto_fill">Auto Fill</span>
@@ -1614,13 +1614,28 @@ function clearAutoBadges(){
   autoFilledIds.clear();
 }
 
+function sanitizeVin(vin) {
+  if (!vin) return '';
+  const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+  let s = vin.toString().trim().toUpperCase();
+  for (let i = 0; i < 10; i++) {
+    s = s.split(arabicDigits[i]).join(String(i));
+  }
+  s = s.replace(/[\s\-_.]+/g, '');
+  // ISO 3779 / US CFR Title 49 Part 565 prohibits letters I, O, Q to avoid confusion with 1, 0, 0
+  // Auto-correct common transcription typos:
+  s = s.replace(/O/g, '0').replace(/I/g, '1').replace(/Q/g, '0');
+  if (s.length > 17) s = s.substring(0, 17);
+  return s;
+}
+
 async function fetchVinSpecs(vin) {
-  const cleanVin = (vin || '').toString().trim().toUpperCase().replace(/[\s\-_]+/g, '');
+  const cleanVin = sanitizeVin(vin);
   if (!cleanVin || cleanVin.length !== 17) {
     throw new Error('VIN must be exactly 17 characters');
   }
 
-  // Strategy 1: Call same-origin Vercel serverless function (immune to CORS & regional ISP timeouts)
+  // Strategy 1: Call same-origin Vercel serverless function (fastest, immune to CORS & regional ISP timeouts)
   try {
     const res = await fetch(`/api/decode-vin?vin=${encodeURIComponent(cleanVin)}`);
     if (res.ok) {
@@ -1630,10 +1645,23 @@ async function fetchVinSpecs(vin) {
       }
     }
   } catch(e) {
-    console.warn('Serverless /api/decode-vin fallback:', e);
+    console.warn('Local /api/decode-vin fallback:', e);
   }
 
-  // Strategy 2: Direct query to NHTSA DecodeVinValues (flat format, 5x faster)
+  // Strategy 2: Call live production cloud endpoint (supports local file:// previews or external staging)
+  try {
+    const res = await fetch(`https://deal-trace-two.vercel.app/api/decode-vin?vin=${encodeURIComponent(cleanVin)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && (data.make || data.model || data.year)) {
+        return data;
+      }
+    }
+  } catch(e) {
+    console.warn('Production /api/decode-vin fallback:', e);
+  }
+
+  // Strategy 3: Direct query to NHTSA DecodeVinValues (flat format, 5x faster)
   try {
     const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(cleanVin)}?format=json`);
     if (res.ok) {
@@ -1643,7 +1671,8 @@ async function fetchVinSpecs(vin) {
         const engineParts = [
           r.EngineConfiguration,
           r.EngineCylinders ? r.EngineCylinders + '-cyl' : '',
-          r.DisplacementL ? r.DisplacementL + 'L' : ''
+          r.DisplacementL ? r.DisplacementL + 'L' : '',
+          r.EngineHP ? r.EngineHP + ' HP' : ''
         ].filter(Boolean).join(' ');
 
         return {
@@ -1651,13 +1680,14 @@ async function fetchVinSpecs(vin) {
           vin: cleanVin,
           year: r.ModelYear || '',
           make: r.Make || '',
-          model: r.Model || '',
+          model: r.Model || r.Series || '',
           trim: r.Trim || '',
           engine: engineParts || r.EngineModel || '',
           transmission: r.TransmissionStyle || '',
           bodyType: r.BodyClass || '',
           driveType: r.DriveType || '',
           fuelType: r.FuelTypePrimary || '',
+          doors: r.Doors || '',
           errorCode: r.ErrorCode || '0',
           errorText: r.ErrorText || ''
         };
@@ -1667,7 +1697,7 @@ async function fetchVinSpecs(vin) {
     console.warn('Direct DecodeVinValues fallback:', e);
   }
 
-  // Strategy 3: Direct query to NHTSA standard DecodeVin
+  // Strategy 4: Direct query to NHTSA standard DecodeVin
   const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${encodeURIComponent(cleanVin)}?format=json`);
   if (!res.ok) throw new Error('Could not reach VIN decoding services.');
   const data = await res.json();
@@ -1679,7 +1709,8 @@ async function fetchVinSpecs(vin) {
   const engine = [
     get('Engine Number of Cylinders') ? get('Engine Number of Cylinders') + '-cyl' : '',
     get('Displacement (L)') ? get('Displacement (L)') + 'L' : '',
-    get('Engine Configuration')
+    get('Engine Configuration'),
+    get('Engine Brake (hp) From') ? get('Engine Brake (hp) From') + ' HP' : ''
   ].filter(Boolean).join(' ');
 
   return {
@@ -1687,13 +1718,14 @@ async function fetchVinSpecs(vin) {
     vin: cleanVin,
     year: get('Model Year') || '',
     make: get('Make') || '',
-    model: get('Model') || '',
+    model: get('Model') || get('Series') || '',
     trim: get('Trim') || '',
     engine: engine || get('Engine Model') || '',
     transmission: get('Transmission Style') || '',
     bodyType: get('Body Class') || '',
     driveType: get('Drive Type') || '',
     fuelType: get('Fuel Type - Primary') || '',
+    doors: get('Doors') || '',
     errorCode: get('Error Code') || '0',
     errorText: get('Error Text') || ''
   };
@@ -1701,7 +1733,10 @@ async function fetchVinSpecs(vin) {
 
 async function decodeVin(){
   const rawVin = document.getElementById('vinInput').value;
-  const vin = (rawVin || '').trim().toUpperCase().replace(/[\s\-_]+/g, '');
+  const vin = sanitizeVin(rawVin);
+  if (vin && vin !== rawVin) {
+    document.getElementById('vinInput').value = vin;
+  }
   if(vin.length !== 17){
     setStatus(window.I18n ? window.I18n.t('cmp.err_vin_len') : 'VINs are 17 characters — double-check and try again.', 'err');
     return;
@@ -1713,6 +1748,9 @@ async function decodeVin(){
 
   try{
     const specs = await fetchVinSpecs(vin);
+    if (!specs.make && !specs.model && !specs.year) {
+      throw new Error(specs.errorText || 'Vehicle specifications not found for this VIN.');
+    }
 
     markAutoFilled('vin', vin);
     markAutoFilled('year', specs.year);
@@ -1728,7 +1766,7 @@ async function decodeVin(){
     setStatus(window.I18n ? (window.I18n.getLanguage() === 'ar' ? 'تم التعرف على المركبة وتعبئة المواصفات بالأسفل.' : 'Vehicle identified. Specs auto-filled below.') : 'Vehicle identified. Specs auto-filled below.', 'ok');
   } catch(err){
     console.error('VIN decode error:', err);
-    setStatus(window.I18n ? window.I18n.t('cmp.err_nhtsa') : 'Could not reach VIN decoder. Enter specs manually below.', 'err');
+    setStatus(window.I18n ? (window.I18n.getLanguage() === 'ar' ? 'تعذر فك شفرة الشاسيه. يرجى التأكد من الرقم أو إدخال المواصفات يدوياً.' : 'Could not decode VIN. Please check the 17 characters or enter specs manually below.') : 'Could not decode VIN. Please check the 17 characters or enter specs manually below.', 'err');
   } finally {
     btn.disabled = false;
   }
@@ -2701,7 +2739,10 @@ function dealMetrics(c){
 
 async function decodeCompareVin(){
   const rawVin = document.getElementById('compareVinInput').value;
-  const vin = (rawVin || '').trim().toUpperCase().replace(/[\s\-_]+/g, '');
+  const vin = sanitizeVin(rawVin);
+  if (vin && vin !== rawVin) {
+    document.getElementById('compareVinInput').value = vin;
+  }
   if(vin.length !== 17){
     setCompareStatus(window.I18n ? window.I18n.t('cmp.err_vin_len') : 'VINs are exactly 17 characters — check and try again.', 'err');
     return;
@@ -2712,6 +2753,9 @@ async function decodeCompareVin(){
 
   try{
     const specs = await fetchVinSpecs(vin);
+    if (!specs.make && !specs.model && !specs.year) {
+      throw new Error(specs.errorText || 'Vehicle specifications not found for this VIN.');
+    }
 
     compareNewVehicle = {
       VIN: vin,
@@ -2740,13 +2784,13 @@ async function decodeCompareVin(){
     if(compareMatches.length){
       setCompareStatus(window.I18n ? window.I18n.t('cmp.found_deals', {n: compareMatches.length, car: carName}) : `Found ${compareMatches.length} historical deal(s) on ${carName}.`, 'ok');
     } else {
-      setCompareStatus(window.I18n ? window.I18n.t('cmp.zero_deals', {car: carName}) : `Zero past deals found on ${carName}.`, 'loading');
+      setCompareStatus(window.I18n ? (window.I18n.getLanguage() === 'ar' ? `تم فك الشاسيه بنجاح: ${carName} (لا توجد صفقات سابقة مسجلة لنفس الطراز).` : `Decoded: ${carName} (Zero past deals found in your history).`) : `Decoded: ${carName} (Zero past deals found in your history).`, 'ok');
     }
 
     renderComparison();
   } catch(err){
     console.error('Compare VIN decode error:', err);
-    setCompareStatus(window.I18n ? window.I18n.t('cmp.err_nhtsa') : 'Could not reach VIN decoder. Check internet connection.', 'err');
+    setCompareStatus(window.I18n ? (window.I18n.getLanguage() === 'ar' ? 'تعذر فك شفرة الشاسيه. يرجى التأكد من الرقم المكون من 17 خانة أو إدخال المواصفات يدوياً.' : 'Could not decode VIN. Please verify the 17 characters or enter specs manually below.') : 'Could not decode VIN. Please verify the 17 characters or enter specs manually below.', 'err');
   } finally {
     btn.disabled = false;
   }
