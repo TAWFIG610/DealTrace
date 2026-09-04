@@ -1614,8 +1614,94 @@ function clearAutoBadges(){
   autoFilledIds.clear();
 }
 
+async function fetchVinSpecs(vin) {
+  const cleanVin = (vin || '').toString().trim().toUpperCase().replace(/[\s\-_]+/g, '');
+  if (!cleanVin || cleanVin.length !== 17) {
+    throw new Error('VIN must be exactly 17 characters');
+  }
+
+  // Strategy 1: Call same-origin Vercel serverless function (immune to CORS & regional ISP timeouts)
+  try {
+    const res = await fetch(`/api/decode-vin?vin=${encodeURIComponent(cleanVin)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && (data.make || data.model || data.year)) {
+        return data;
+      }
+    }
+  } catch(e) {
+    console.warn('Serverless /api/decode-vin fallback:', e);
+  }
+
+  // Strategy 2: Direct query to NHTSA DecodeVinValues (flat format, 5x faster)
+  try {
+    const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(cleanVin)}?format=json`);
+    if (res.ok) {
+      const data = await res.json();
+      const r = (data.Results && data.Results[0]) || {};
+      if (r.Make || r.Model || r.ModelYear) {
+        const engineParts = [
+          r.EngineConfiguration,
+          r.EngineCylinders ? r.EngineCylinders + '-cyl' : '',
+          r.DisplacementL ? r.DisplacementL + 'L' : ''
+        ].filter(Boolean).join(' ');
+
+        return {
+          success: true,
+          vin: cleanVin,
+          year: r.ModelYear || '',
+          make: r.Make || '',
+          model: r.Model || '',
+          trim: r.Trim || '',
+          engine: engineParts || r.EngineModel || '',
+          transmission: r.TransmissionStyle || '',
+          bodyType: r.BodyClass || '',
+          driveType: r.DriveType || '',
+          fuelType: r.FuelTypePrimary || '',
+          errorCode: r.ErrorCode || '0',
+          errorText: r.ErrorText || ''
+        };
+      }
+    }
+  } catch(e) {
+    console.warn('Direct DecodeVinValues fallback:', e);
+  }
+
+  // Strategy 3: Direct query to NHTSA standard DecodeVin
+  const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${encodeURIComponent(cleanVin)}?format=json`);
+  if (!res.ok) throw new Error('Could not reach VIN decoding services.');
+  const data = await res.json();
+  const results = data.Results || [];
+  const get = (name) => {
+    const item = results.find(x => x.Variable === name);
+    return item ? item.Value : '';
+  };
+  const engine = [
+    get('Engine Number of Cylinders') ? get('Engine Number of Cylinders') + '-cyl' : '',
+    get('Displacement (L)') ? get('Displacement (L)') + 'L' : '',
+    get('Engine Configuration')
+  ].filter(Boolean).join(' ');
+
+  return {
+    success: true,
+    vin: cleanVin,
+    year: get('Model Year') || '',
+    make: get('Make') || '',
+    model: get('Model') || '',
+    trim: get('Trim') || '',
+    engine: engine || get('Engine Model') || '',
+    transmission: get('Transmission Style') || '',
+    bodyType: get('Body Class') || '',
+    driveType: get('Drive Type') || '',
+    fuelType: get('Fuel Type - Primary') || '',
+    errorCode: get('Error Code') || '0',
+    errorText: get('Error Text') || ''
+  };
+}
+
 async function decodeVin(){
-  const vin = document.getElementById('vinInput').value.trim().toUpperCase();
+  const rawVin = document.getElementById('vinInput').value;
+  const vin = (rawVin || '').trim().toUpperCase().replace(/[\s\-_]+/g, '');
   if(vin.length !== 17){
     setStatus(window.I18n ? window.I18n.t('cmp.err_vin_len') : 'VINs are 17 characters — double-check and try again.', 'err');
     return;
@@ -1626,29 +1712,22 @@ async function decodeVin(){
   clearAutoBadges();
 
   try{
-    const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
-    if(!res.ok) throw new Error('Request failed');
-    const data = await res.json();
-    const results = data.Results || [];
-    const get = (name) => {
-      const r = results.find(x => x.Variable === name);
-      return r ? r.Value : '';
-    };
+    const specs = await fetchVinSpecs(vin);
 
     markAutoFilled('vin', vin);
-    markAutoFilled('year', get('Model Year'));
-    markAutoFilled('make', get('Make'));
-    markAutoFilled('model', get('Model'));
-    markAutoFilled('trim', get('Trim'));
-    const engine = [get('Engine Number of Cylinders') && get('Engine Number of Cylinders') + '-cyl', get('Displacement (L)') && get('Displacement (L)') + 'L', get('Engine Configuration')].filter(Boolean).join(' ');
-    markAutoFilled('engine', engine || get('Engine Model'));
-    markAutoFilled('transmission', get('Transmission Style'));
-    markAutoFilled('bodyType', get('Body Class'));
-    markAutoFilled('driveType', get('Drive Type'));
-    markAutoFilled('fuelType', get('Fuel Type - Primary'));
+    markAutoFilled('year', specs.year);
+    markAutoFilled('make', specs.make);
+    markAutoFilled('model', specs.model);
+    markAutoFilled('trim', specs.trim);
+    markAutoFilled('engine', specs.engine);
+    markAutoFilled('transmission', specs.transmission);
+    markAutoFilled('bodyType', specs.bodyType);
+    markAutoFilled('driveType', specs.driveType);
+    markAutoFilled('fuelType', specs.fuelType);
 
     setStatus(window.I18n ? (window.I18n.getLanguage() === 'ar' ? 'تم التعرف على المركبة وتعبئة المواصفات بالأسفل.' : 'Vehicle identified. Specs auto-filled below.') : 'Vehicle identified. Specs auto-filled below.', 'ok');
   } catch(err){
+    console.error('VIN decode error:', err);
     setStatus(window.I18n ? window.I18n.t('cmp.err_nhtsa') : 'Could not reach VIN decoder. Enter specs manually below.', 'err');
   } finally {
     btn.disabled = false;
@@ -2621,7 +2700,8 @@ function dealMetrics(c){
 }
 
 async function decodeCompareVin(){
-  const vin = document.getElementById('compareVinInput').value.trim().toUpperCase();
+  const rawVin = document.getElementById('compareVinInput').value;
+  const vin = (rawVin || '').trim().toUpperCase().replace(/[\s\-_]+/g, '');
   if(vin.length !== 17){
     setCompareStatus(window.I18n ? window.I18n.t('cmp.err_vin_len') : 'VINs are exactly 17 characters — check and try again.', 'err');
     return;
@@ -2631,27 +2711,19 @@ async function decodeCompareVin(){
   setCompareStatus(window.I18n ? window.I18n.t('cmp.looking_up') : 'Looking up factory specs via NHTSA VPIC…', 'loading');
 
   try{
-    const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
-    if(!res.ok) throw new Error('Request failed');
-    const data = await res.json();
-    const results = data.Results || [];
-    const get = (name) => {
-      const r = results.find(x => x.Variable === name);
-      return r ? r.Value : '';
-    };
-    const engine = [get('Engine Number of Cylinders') && get('Engine Number of Cylinders') + '-cyl', get('Displacement (L)') && get('Displacement (L)') + 'L', get('Engine Configuration')].filter(Boolean).join(' ');
+    const specs = await fetchVinSpecs(vin);
 
     compareNewVehicle = {
       VIN: vin,
-      Year: get('Model Year'),
-      Make: get('Make'),
-      Model: get('Model'),
-      Trim: get('Trim'),
-      Engine: engine || get('Engine Model'),
-      Transmission: get('Transmission Style'),
-      'Body type': get('Body Class'),
-      'Drive type': get('Drive Type'),
-      'Fuel type': get('Fuel Type - Primary'),
+      Year: specs.year,
+      Make: specs.make,
+      Model: specs.model,
+      Trim: specs.trim,
+      Engine: specs.engine,
+      Transmission: specs.transmission,
+      'Body type': specs.bodyType,
+      'Drive type': specs.driveType,
+      'Fuel type': specs.fuelType,
     };
 
     await loadSavedCarsForCompare();
@@ -2664,7 +2736,7 @@ async function decodeCompareVin(){
         && norm(md) === norm(compareNewVehicle.Model);
     });
 
-    const carName = `${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model}`;
+    const carName = `${compareNewVehicle.Year} ${compareNewVehicle.Make} ${compareNewVehicle.Model}`.trim() || vin;
     if(compareMatches.length){
       setCompareStatus(window.I18n ? window.I18n.t('cmp.found_deals', {n: compareMatches.length, car: carName}) : `Found ${compareMatches.length} historical deal(s) on ${carName}.`, 'ok');
     } else {
@@ -2673,6 +2745,7 @@ async function decodeCompareVin(){
 
     renderComparison();
   } catch(err){
+    console.error('Compare VIN decode error:', err);
     setCompareStatus(window.I18n ? window.I18n.t('cmp.err_nhtsa') : 'Could not reach VIN decoder. Check internet connection.', 'err');
   } finally {
     btn.disabled = false;
