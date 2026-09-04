@@ -126,6 +126,12 @@ const I18N_DICTIONARY = {
     'add.saved_success': '✓ Deal successfully committed live to Supabase PostgreSQL database!',
     'add.badge_autofilled': 'Auto-filled',
 
+    'add.ph_manheim': 'Auction code (e.g. from your Manheim buy sheet)',
+    'add.btn_manheim': 'Pull from Manheim',
+    'add.manheim_need_vin': 'Enter the 17-character VIN above first, then pull from Manheim.',
+    'add.manheim_need_code': 'Enter the auction code this car was bought at — Manheim lookup needs it.',
+    'add.manheim_success': 'Pulled from Manheim. Review the deal fields below before saving.',
+
     // Tab 3: Find a Car
     'find.title': 'Deal Directory & Buyer Search',
     'find.sub': 'Instant cloud query across all stored deals by buyer name or VIN.',
@@ -137,6 +143,13 @@ const I18N_DICTIONARY = {
     'find.buyer': 'Buyer',
     'find.saved': 'Saved',
     'find.confirm_delete': 'Permanently delete this deal from Supabase? This cannot be undone.',
+    'find.buyer_summary_title': 'Buyer Performance Summary',
+    'find.buyer_summary_sub': 'Totals across everything each buyer has bought — see who is generating the highest volume and profit.',
+    'find.buyer_col_name': 'Buyer',
+    'find.buyer_col_cars': 'Total Vehicles',
+    'find.buyer_col_invested': 'Total Invested',
+    'find.buyer_col_profit': 'Realized Profit',
+    'modal.btn_download': 'Download',
 
     // Vehicle Spec Fields
     'field.vin': 'VIN',
@@ -320,6 +333,12 @@ const I18N_DICTIONARY = {
     'add.saved_success': '✓ تم حفظ الصفقة بنجاح في قاعدة بيانات Supabase السحابية!',
     'add.badge_autofilled': 'تم التعبئة تلقائياً',
 
+    'add.ph_manheim': 'كود المزاد (من فاتورة مانهيم)',
+    'add.btn_manheim': 'سحب البيانات من مانهيم',
+    'add.manheim_need_vin': 'يرجى إدخال رقم الشاسيه (17 حرفاً) أولاً قبل سحب بيانات مانهيم.',
+    'add.manheim_need_code': 'يرجى إدخال كود المزاد المسجل في فاتورة مانهيم.',
+    'add.manheim_success': 'تم سحب البيانات من مانهيم بنجاح. راجع الحقول أدناه قبل الحفظ.',
+
     // Tab 3: Find a Car
     'find.title': 'دليل الصفقات والبحث بالمشتري',
     'find.sub': 'استعلام سحابي فوري عبر جميع الصفقات المخزنة باستخدام اسم المشتري أو رقم الشاسيه.',
@@ -331,6 +350,13 @@ const I18N_DICTIONARY = {
     'find.buyer': 'المشتري',
     'find.saved': 'تاريخ الحفظ',
     'find.confirm_delete': 'هل أنت متأكد من حذف هذه الصفقة نهائياً من السحابة؟ لا يمكن التراجع عن هذا الإجراء.',
+    'find.buyer_summary_title': 'ملخص أداء المشترين',
+    'find.buyer_summary_sub': 'إجمالي الصفقات والأرباح المحققة لكل مشتري — لمعرفة أفضل المشترين تحقيقاً للعوائد والأرباح.',
+    'find.buyer_col_name': 'المشتري',
+    'find.buyer_col_cars': 'إجمالي السيارات',
+    'find.buyer_col_invested': 'إجمالي الاستثمار',
+    'find.buyer_col_profit': 'صافي الأرباح المحققة',
+    'modal.btn_download': 'تحميل الصورة',
 
     // Vehicle Spec Fields
     'field.vin': 'رقم الشاسيه (VIN)',
